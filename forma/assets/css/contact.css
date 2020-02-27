@@ -1,0 +1,23 @@
+#contact_form {font-family:Verdana, Arial, "Times New Roman";font-size:12px;color:#006400;}
+#contact_form input,select,textarea {font-size:13px;color:#999999;width:300px;height:28px;border:#CCC solid 1px;border-radius:5px;-moz-border-radius:5px;-khtml-border-radius:5px;webkit-border-radius:5px;}
+#contact_form input:hover,select:hover,textarea:hover{border:1px solid #999;}
+#contact_form input:focus,select:focus,textarea:focus {border:1px solid #999;}
+#contact_form select{padding:5px 5px 3px 5px;}
+#contact_form select option{cursor:pointer;padding:5px;}
+#contact_form textarea{height:80px;padding:4px 2px 2px 4px;font-family:Verdana,Arial,"Times New Roman";}
+#contact_form input{padding:0 5px 0px 30px;background-position:7px 5px;background-repeat:no-repeat;}
+input#send{padding:0;cursor:pointer;width:135px;height:23px;background:url(../img/contact/send_button.png);}
+input#send:hover{border:1px solid #999;color:#666;}
+#contact_form label{display:inline-block;width:100px;vertical-align:top;margin-top:6px;}
+#contact_form span{border:0;padding:0;margin:0;display:block;margin-bottom:10px;}
+#name{background-image:url(../img/contact/user_suit.png);}
+#email{background-image:url(../img/contact/email.png);}
+#phone{background-image:url(../img/contact/phone.png);}
+#ajax_loader{display:none;}
+.success{border:1px solid #00CC00;color:#4F8A10;background:#F2FFF2;display:none;margin-top:3px;font-size:11px;padding:5px;text-align:center;margin-bottom:5px;border-radius:5px;-moz-border-radius:5px;-khtml-border-radius:5px;-webkit-border-radius:5px;}
+.error{display:none;margin-top:3px;font-size:11px;border:1px solid #FF4F4F;color:#D6000E;background:#FFF2F2;padding:5px;text-align:center;margin-bottom:5px;border-radius:5px;-moz-border-radius:5px;-khtml-border-radius:5px;-webkit-border-radius:5px;}
+.warning{display:none;margin-top:3px;font-size:11px;color:#9F6000;background:#FFF9D5;border:1px solid #FFD324;padding:5px;text-align:center;border-radius:5px;-moz-border-radius:5px;-khtml-border-radius:5px;-webkit-border-radius:5px;}
+#contact_form .noicon{padding:0px 7px 0 7px;text-align:center;}
+a.button{display:inline-block;color:#000;font-size:12px;text-decoration:none;padding:0 6px;outline:none;border-radius:2px;}
+a.button:hover{background: #dcdcdc linear-gradient(#fff,#dcdcdc);box-shadow: 0 0 0 1px #aaa inset, 0 1px 1px #aaa;}
+a.button:active{background: none;box-shadow:0 0 0 1px #bbb inset, 0 1px 3px rgba(0,0,0,.5) inset, 0 1px 2px #fff;}

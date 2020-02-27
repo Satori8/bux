@@ -1,0 +1,15 @@
+body{background:url(../img/lay/bg.jpg);}
+div#contact{width:444px;margin:0 auto;}
+div#top{background:url(../img/lay/top.jpg);height:64px;}
+div#top h1{font-family:Verdana,Arial;font-size:22px;font-weight:normal;padding:20px 0 0 20px;color:#fff;}
+div#center{background:url(../img/lay/center.jpg);padding:5px 15px 5px 25px;}
+div#bot{background:url(../img/lay/bot.jpg);height:13px;}
+* body h2{border-bottom:1px solid #0066CC;color:#0066CC;}
+a.button1{display:inline-block;border-radius:100%;outline:none;background:#27973A;}
+a.button1:after, a.button1:before{position:absolute;z-index:-1;top:7.5%;left:-15%;right:0;bottom:0;width:30%;height:10%;margin:auto;background:#999;-webkit-transform:rotate(45deg);transform:rotate(45deg);}
+a.button1:before{left:15%;-webkit-transform:rotate(315deg);transform:rotate(315deg);}
+a.button1:hover, a.button1:focus{background:#e35d31;box-shadow:none;}
+a.button1:focus{background-image:linear-gradient(120deg,transparent 45%,#e35d31 45%,#e35d31 55%,transparent 55%),radial-gradient(transparent 20%,#fff 20%,#fff 30%,transparent 30%);-webkit-animation:rotate31 1s linear infinite forwards;animation:rotate31 1s linear infinite forwards;}
+a.button1:focus:after, a.button1:focus:before{position:absolute;z-index:-1;top:calc(-30% - 4px/2);left:4px;width:0;height:0;border-top:4px solid transparent;border-bottom:4px solid transparent;background:transparent;box-shadow:none;-webkit-transform:rotate(0deg);transform:rotate(0deg);}
+@-webkit-keyframes rotate31{100%{-webkit-transform: rotate(360deg);}}
+@keyframes rotate31{100%{transform: rotate(360deg);}}

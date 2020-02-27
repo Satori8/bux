@@ -1,0 +1,32 @@
+Order Deny,Allow
+Deny from all
+
+<Files "form_add_ban.php">
+Order Allow,Deny
+Allow from All
+</Files>
+
+<Files "del_ban.php">
+Order Allow,Deny
+Allow from All
+</Files>
+
+<Files "del_theme.php">
+Order Allow,Deny
+Allow from All
+</Files>
+
+<Files "open_theme.php">
+Order Allow,Deny
+Allow from All
+</Files>
+
+<Files "close_theme.php">
+Order Allow,Deny
+Allow from All
+</Files>
+
+<Files "moder_post.php">
+Order Allow,Deny
+Allow from All
+</Files>

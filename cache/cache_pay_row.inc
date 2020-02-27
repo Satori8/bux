@@ -1,0 +1,1 @@
+a:1:{i:0;a:6:{s:5:"id_pr";s:2:"48";s:7:"user_pr";s:0:"";s:7:"date_pr";s:10:"1563895469";s:6:"url_pr";s:62:"http://playfortuna-spins.net/?c09546ca9184af13dcbb8d1a8879c1e1";s:7:"desc_pr";s:60:"~~~~~~ + ~~~~~~ . ¡≈—œ–Œ»√–€ÿÕ¿ﬂ * ÀŒ“≈–≈ﬂ . ~~~~~~ + ~~~~~~";s:8:"views_pr";s:2:"19";}}

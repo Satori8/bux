@@ -1,0 +1,15 @@
+html,body{background:rgba(210,77,87,.6);}
+.loxbrauser{position:absolute;left:50%;top:50%;text-align:center;width:635px;background:#fff;line-height:240%;border-bottom:1px solid #E4E4E4;margin:-200px 0 0 -315px;}
+.tcon{border:solid #B8C7D3;border-width:0 1px 1px;padding:20px;}
+.golova{width:100%;}
+.golova tr,.golova td{margin:0;padding:0;}
+.gb1{width:285px;height:40px;background:#1DAF5A;font-size:34px;color:#fff;}
+.gb2{width:100%;height:40px;background:#1DAF5A;}
+.gbr{width:400px;height:115px;margin:10px auto 0;margin-left:88px;}
+.gbr a{float:left;width:100px;height:20px;padding:80px 0 7px;}
+.gojs{background:url(gojs.jpg) no-repeat 50% 6px;}
+.ffjs{background:url(ffjs.jpg) no-repeat 50% 7px;}
+.opjs{background:url(opjs.jpg) no-repeat 50% 7px;}
+.yajs{background:url(yajs.png) no-repeat 50% 7px;}
+a{color:#1DAF5A;text-decoration:none;}
+a:hover{color:#3a5fcd;text-decoration:none;}

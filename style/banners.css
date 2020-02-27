@@ -1,0 +1,9 @@
+#banners a img{
+	opacity:0.3;
+	filter: alpha(opacity=40);
+}
+
+#banners a:hover img{
+	opacity:1.0;
+	filter: alpha(opacity=100);
+}

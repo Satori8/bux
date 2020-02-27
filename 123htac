@@ -1,0 +1,137 @@
+php_flag display_errors off
+php_value error_reporting 0
+AddDefaultCharset windows-1251
+
+# «ащищаем .htaccess файл
+  <files .htaccess>
+  order allow,deny
+  deny from all
+  </files>
+
+
+#—писок запрещенных дл€ хотлинка форматов
+#RewriteRule \.(jpe?g|bmp|gif|png|css|zip|pdf|txt|doc|swf)$ - [NC,F,L]
+
+# Ѕлокировать любой запрос, пытающийс€ установить значение mosConfig через URL
+RewriteCond %{QUERY_STRING} mosConfig_[a-zA-Z_]{1,21}(=|\%3D) [OR]
+# Ѕлокировать любой запрос, пытающийс€ испортить base64_encode через URL
+RewriteCond %{QUERY_STRING} base64_encode[^(]*\([^)]*\) [OR]
+# Ѕлокировать любой запрос, содержащий тег srcipt в URL
+RewriteCond %{QUERY_STRING} (<|%3C)([^s]*s)+cript.*(>|%3E) [NC,OR]
+# Ѕлокировать любой запрос, пытающийс€ установить значение глобальных переменных PHP через URL
+RewriteCond %{QUERY_STRING} GLOBALS(=|\[|\%[0-9A-Z]{0,2}) [OR]
+# Ѕлокировать любой запрос, пытающийс€ изменить _REQUEST переменную через URL
+RewriteCond %{QUERY_STRING} _REQUEST(=|\[|\%[0-9A-Z]{0,2})
+
+RewriteCond %{HTTP_USER_AGENT} (<|>|'|%0A|%0D|%27|%3C|%3E|%00) [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} (;|<|>|'|"|\)|\(|%0A|%0D|%22|%27|%28|%3C|%3E|%00).*(libwww-perl|wget|python|nikto|curl|scan|java|winhttp|HTTrack|clshttp|archiver|loader|email|harvest|extract|grab|miner) [NC,OR]
+RewriteCond %{QUERY_STRING} base64_encode.*\(.*\) [NC,OR]
+RewriteCond %{QUERY_STRING} base64_(en|de)code[^(]*\([^)]*\) [NC,OR]
+RewriteCond %{QUERY_STRING} concat[^\(]*\( [NC,OR]
+RewriteCond %{QUERY_STRING} union([^s]*s)+elect [NC,OR]
+RewriteCond %{QUERY_STRING} union([^a]*a)+ll([^s]*s)+elect [NC,OR]
+RewriteCond %{QUERY_STRING} (;|<|>|'|"|\)|%0A|%0D|%22|%27|%3C|%3E|%00).*(/\*|union|select|insert|drop|delete|update|cast|create|char|convert|alter|declare|order|script|set|md5|benchmark|encode) [NC,OR]
+
+# ѕеренаправл€ть заблокированные запросы на страницу 404 с запрещенными ошибками!
+RewriteRule .* 404.php [F]
+
+RewriteEngine on
+RewriteBase /
+RewriteCond %{HTTP_HOST} ^www\.(.*) [NC]
+RewriteRule ^(.*)$ http://%1/$1 [R=301,L]
+
+
+
+RewriteCond %{HTTPS} off
+RewriteCond %{HTTP:X-Forwarded-Proto} !https
+RewriteCond %{REQUEST_URI} !^/ajax/
+RewriteCond %{REQUEST_URI} !^/surfing
+RewriteCond %{REQUEST_URI} !^/surfingv
+RewriteCond %{REQUEST_URI} !^/surfing_newv.php
+RewriteCond %{REQUEST_URI} !^/view_mails.php
+RewriteCond %{REQUEST_URI} !^/view_mails_new.php
+RewriteCond %{REQUEST_URI} !^/read-mails
+RewriteCond %{REQUEST_URI} !^/check_url_as.php
+RewriteCond %{REQUEST_URI} !^/autoserfgo/
+RewriteCond %{REQUEST_URI} !^/autoserfgo/auto.php
+RewriteCond %{REQUEST_URI} !^/autoserfgo/index.php
+RewriteCond %{REQUEST_URI} !^/autoserf/
+RewriteCond %{REQUEST_URI} !^/autoserf/auto.php
+RewriteCond %{REQUEST_URI} !^/autoserf/index.php
+RewriteCond %{REQUEST_URI} !^/merchant/interkassa/ik_payresult.php
+RewriteCond %{REQUEST_URI} !^/merchant/megakassa/rk_payresult.php
+RewriteCond %{REQUEST_URI} !^/merchant/payeer/payeer_payresult.php
+RewriteCond %{REQUEST_URI} !^/merchant/perfectmoney/pm_payresult.php
+RewriteCond %{REQUEST_URI} !^/merchant/qiwi/qw_payresult.php
+RewriteCond %{REQUEST_URI} !^/merchant/robokassa/rk_payresult.php
+RewriteCond %{REQUEST_URI} !^/merchant/walletone/w1_payresult.php
+RewriteCond %{REQUEST_URI} !^/merchant/webmoney/wm_payresult.php
+RewriteCond %{REQUEST_URI} !^/merchant/yandexmoney/ym_payresult.php
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+RewriteCond %{THE_REQUEST} ^[A-Z]{3,9}\ /.*index\.php\ HTTP/
+RewriteRule ^(.*)index\.php$ /$1 [R=301,L]
+
+RewriteRule ^cabinet_ads$ cabinet.php [L,QSA]
+RewriteRule ^surfing$ surfing_new.php [L,QSA]
+RewriteRule ^surfings$ surfings.php [L,QSA]
+RewriteRule ^views_sites_as$ views_sites_as.php [L,QSA]
+RewriteRule ^konkurs$ konkurs.php [L,QSA]
+RewriteRule ^register$ register.php [L,QSA]
+RewriteRule ^login$ login.php [L,QSA]
+RewriteRule ^logout$ logout.php [L,QSA]
+RewriteRule ^tests-view$ tests-view.php [L,QSA]
+RewriteRule ^tests-views$ tests-views.php [L,QSA]
+RewriteRule ^task_notifications$ task_notifications.php [L,QSA]
+RewriteRule ^investor_tools$ investor_tools.php [L,QSA]
+RewriteRule ^news$ news.php [L,QSA]
+RewriteRule ^read-mail$ view_mails_new.php [L,QSA]
+RewriteRule ^read-mails$ views_mails_new.php [L,QSA]
+RewriteRule ^profile$ profile.php [L,QSA]
+RewriteRule ^board$ board.php [L,QSA]
+RewriteRule ^free_users$ free_users.php [L,QSA]
+RewriteRule ^articles$ articles.php [L,QSA]
+RewriteRule ^cash_out$ convert.php [L,QSA]
+RewriteRule ^cash_in$ money_add.php [L,QSA]
+RewriteRule ^wall$ wall.php [L,QSA]
+RewriteRule ^action$ action.php [L,QSA]
+RewriteRule ^ref_wall$ ref_wall.php [L,QSA]
+RewriteRule ^surfingv$ surfing_newv.php [L,QSA]
+RewriteRule ^surfingsy$ surfings_you.php [L,QSA]
+RewriteRule ^surfing_as$ views_sites_as.php [L,QSA]
+RewriteRule ^advertise.php$ advertise.php?ads=dlink [L,QSA]
+RewriteRule ^free-user$ free_users.php [L,QSA]
+RewriteRule ^bonus_chance$ shans.php [L,QSA]
+RewriteRule ^game_knb$ game_knb.php [L,QSA]
+RewriteRule ^surfing_asgo$ avtogo.php [L,QSA]
+RewriteRule ^chat$ chat.php [L,QSA]
+RewriteRule ^work-pay-visit$ work-pay-visit.php [L,QSA]
+RewriteRule ^work-pay-visits$ work-pay-visits.php [L,QSA]
+
+ErrorDocument 401 /401.php
+ErrorDocument 403 https://scorpionbux.info/403.html
+ErrorDocument 404 https://scorpionbux.info/404.php
+ErrorDocument 500 https://scorpionbux.info/500.php
+
+RewriteCond %{HTTP_USER_AGENT} SemrushBot
+RewriteRule (.*) - [F,L]
+RewriteCond %{HTTP_USER_AGENT} AhrefsBot
+RewriteRule (.*) - [F,L]
+RewriteCond %{HTTP_USER_AGENT} MJ12bot
+RewriteRule (.*) - [F,L]
+RewriteCond %{HTTP_USER_AGENT} Riddler
+RewriteRule (.*) - [F,L]
+RewriteCond %{HTTP_USER_AGENT} aiHitBot
+RewriteRule (.*) - [F,L]
+RewriteCond %{HTTP_USER_AGENT} trovitBot
+RewriteRule (.*) - [F,L]
+RewriteCond %{HTTP_USER_AGENT} Detectify
+RewriteRule (.*) - [F,L]
+RewriteCond %{HTTP_USER_AGENT} BLEXBot
+RewriteRule (.*) - [F,L]
+RewriteCond %{HTTP_USER_AGENT} LinkpadBot
+RewriteRule (.*) - [F,L]
+RewriteCond %{HTTP_USER_AGENT} dotbot
+RewriteRule (.*) - [F,L]
+RewriteCond %{HTTP_USER_AGENT} FlipboardProxy
+RewriteRule (.*) - [F,L]

@@ -1,0 +1,96 @@
+/***** Дизайн и разработка плагина http://spartak-bux.ru/ 	*****/
+/***** Контакты: WMID 351752459963 *****/
+
+body {
+	width: 100%;
+	height:100%;
+	padding: 0 auto;
+	margin: 0 auto;
+}
+
+body, html {
+	width: 100%;
+	height:100%;
+	padding: 0 auto;
+	margin: 0 auto;
+}
+
+a, a:link, a:visited {
+	color: #da0303;
+	outline: none;
+	text-decoration: underline;
+}
+
+a:hover {
+	color: #e95641;
+	outline: none;
+	text-decoration: none;
+}
+
+a.two {
+	color: #afaf9d;
+	outline: none;
+	text-decoration: none;
+}
+
+a.two:hover {
+	color: #e95641;
+	outline: none;
+	text-decoration: none;
+}
+
+a.menu, a.menu:link, a.menu:visited {
+	font-family: arial;
+	border: 1px solid #000;
+	background: none;
+	color: #0000FF;
+	outline: none;
+	text-decoration: none;
+	padding: 0 5px 0 5px;
+	margin: 5px;
+}
+
+a.menu:hover {
+	font-family: arial;
+	font-size: 10pt;
+	border: 1px solid #000;
+	background: #4775FF;
+	color: #FF0000;
+	outline: none;
+	text-decoration: none;
+	padding: 0 5px 0 5px;
+	margin: 5px;
+}
+
+input.submit {
+	background:none;
+	border:none;
+	width: 26px;
+	height: 20px;
+	font: 13px;
+	color: #005fb8;
+	text-decoration: none;
+	cursor: pointer;
+	padding: 0;
+	margin: 0;
+	display: block;
+}
+
+form {
+	margin: 0px;
+	padding: 0px;
+}
+
+input.submit:hover, input.submit:active {
+	background:none;
+	border:none;
+	width: 26px;
+	height: 20px;
+	font: 13px;
+	color: #e95641;
+	text-decoration: none;
+	cursor: pointer;
+	padding: 0;
+	margin: 0;
+	display: block;
+}

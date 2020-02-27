@@ -1,0 +1,82 @@
+/***** Дизайн и разработка плагина http://spartak-bux.ru/ 	*****/
+/***** Контакты: WMID 351752459963 E-mail: admin@spartak-bux.ru *****/
+
+body {
+	margin: 0px;
+	padding: 0px;
+	border-bottom: 1px solid #000;
+}
+
+
+a, a:link, a:visited {
+	font-family: arial;
+	font-size: 9pt;
+	color: #0000FF;
+	outline: none;
+	text-decoration: none;
+}
+
+a:hover {
+	font-family: arial;
+	font-size: 9pt;
+	color: #FF0000;
+	outline: none;
+	text-decoration: none;
+}
+
+a.menu, a.menu:link, a.menu:visited {
+	font-family: arial;
+	font-size: 10pt;
+	border: 1px solid #000;
+	background: none;
+	color: #0000FF;
+	outline: none;
+	text-decoration: none;
+	padding: 0 5px 0 5px;
+	margin: 5px;
+}
+
+a.menu:hover {
+	font-family: arial;
+	font-size: 10pt;
+	border: 1px solid #000;
+	background: #4775FF;
+	color: #FF0000;
+	outline: none;
+	text-decoration: none;
+	padding: 0 5px 0 5px;
+	margin: 5px;
+}
+
+input.submit {
+	background: #DADADA;
+	border: 1px solid #000;
+	width: 38px;
+	height: 20px;
+	font: 14px;
+	color: #0000FF;
+	text-decoration: none;
+	cursor: pointer;
+	padding: 0 3px 0 3px;
+	margin: 0 3px 0 3px;
+	display: block;
+}
+
+form {
+	margin: 0px;
+	padding: 0px;
+}
+
+input.submit:hover, input.submit:active {
+	background: #0000CC;
+	border: 1px solid #339933;
+	width: 38px;
+	height: 20px;
+	font: 14px;
+	color: #FFFFFF;
+	text-decoration: none;
+	cursor: pointer;
+	padding: 0 3px 0 3px;
+	margin: 0 3px 0 3px;
+	display: block;
+}

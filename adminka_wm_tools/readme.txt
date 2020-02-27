@@ -1,0 +1,1 @@
+Скрипт скачен с https://top-skript.ru/

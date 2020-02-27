@@ -1,0 +1,1390 @@
+<?php
+
+$rid = (isset($_GET["rid"])) ? intval($_GET["rid"]) : false;
+
+if(1==1){
+?>
+<link rel="stylesheet" type="text/css" href="/style/task.css" />
+<div id="load" style="display: none;"></div>
+<script type="text/javascript" src="../scripts/jqpooop.js"></script>
+<script src="/js/js_task.js"></script>
+<script type="text/javascript">
+
+function ShowHideInfo(id) {
+	if($("#"+id).css("display") == "none") {
+		$("#"+id).css("display", "");
+	} else {
+		$("#"+id).css("display", "none");
+	}
+}
+
+function AddClaims(id, type) {
+	var tm;
+	var claimstext = $.trim($("#claimstext"+id).val());
+
+	function hidemsg() {
+		$("#info-claims-"+id).slideToggle("slow");
+		if (tm) clearTimeout(tm);
+	}
+
+	if(claimstext.length<10) {
+		$("#info-claims-"+id).show().html('Укажите минимум 10 символов текста для жалобы.<br>');
+		tm = setTimeout(function() {hidemsg()}, 3000);
+		return false;
+	} else {
+		$.ajax({
+			type: "POST", url: "/ajax/ajax_claims_task.php?rnd="+Math.random(), data: {'id':id, 'type':type, 'claimstext':claimstext}, 
+			dataType: 'json', beforeSend: function() { $("#loading").slideToggle(); }, 
+			error: function() {
+				$("#loading").slideToggle();
+				$("#info-claims-"+id).show().html('Ошибка обработки данных! Если ошибка повторяется, сообщите Администрации сайта.<br>');
+				tm = setTimeout(function() {hidemsg()}, 5000);
+				return false;
+			}, 
+			success: function(data) {
+				$("#loading").slideToggle();
+				$("#info-claims-"+id).html("");
+
+				if (data.result == "OK") {
+					$("#formclaims"+id).show().html(data.message);
+					tm = setTimeout(function() {$("#claims"+id).click()}, 5000);
+					return false;
+				} else {
+					if(data.message) {
+						$("#info-claims-"+id).show().html(data.message);
+						tm = setTimeout(function() {hidemsg()}, 3000);
+						return false;
+					} else {
+						$("#info-claims-"+id).show().html("Ошибка обработки данных!");
+						tm = setTimeout(function() {hidemsg()}, 3000);
+						return false;
+					}
+				}
+			}
+		});
+	}
+}
+
+</script>
+<?
+
+if(isset($_SESSION["userLog"]) && isset($_SESSION["userPas"])) {
+	$sql_b = mysql_query("SELECT * FROM `tb_ban_users` WHERE `name`='$username' ORDER BY `id` DESC");
+	if(mysql_num_rows($sql_b)>0) {
+		$row_b = mysql_fetch_array($sql_b);
+		$prichina = $row_b["why"];
+		$kogda = $row_b["date"];
+		echo '<span class="msg-error">Ваш аккаунт заблокирован! Вы не можете просматривать рекламу!<br><u>Дата блокировки</u>: '.$row_b["date"].'</span>';
+		include('footer.php');
+		exit();
+	}
+}
+
+
+if($my_rep_task <= -10) {
+	echo '<span class="msg-error">Вы не можете выполнять задания! Ваша репутация исполнителя&nbsp;&nbsp;'.$my_rep_task.'</span>';
+	include('footer.php');
+	exit();
+}
+
+if(isset($_GET["op"]) && isset($_GET["rid"]) && limpiar($_GET["op"])=="dell") {
+	$sql_dell = mysql_query("SELECT `id` FROM `tb_ads_task_pay` WHERE `user_name`='$username' AND `ident`='$rid' AND `type`='task' AND (`status`='' OR `status`='dorab') ORDER BY `id` DESC LIMIT 1");
+	if(mysql_num_rows($sql_dell)>0) {
+		$row_dell = mysql_fetch_row($sql_dell);
+		mysql_query("DELETE FROM `tb_ads_task_pay`  WHERE `id`='".$row_dell["0"]."' LIMIT 1") or die(mysql_error());
+		echo '<script type="text/javascript">location.replace("'.$_SERVER["PHP_SELF"].'?page='.limpiarez($_GET["page"]).'&rid='.$rid.'");</script>';
+	}
+}
+
+$sql = mysql_query("SELECT * FROM `tb_ads_task` WHERE `id`='$rid'");
+if(mysql_num_rows($sql)>0) {
+	$row = mysql_fetch_array($sql);
+	$rek_name = $row["username"];
+	$country_targ = $row["country_targ"];
+
+	$check_user = mysql_query("SELECT `id` FROM `tb_ads_task_bl` WHERE `rek_name`='$rek_name' AND `user_name`='$username'");
+	if(mysql_num_rows($check_user)) {
+		echo '<span class="msg-error">Вы не можете выполнять задания этого рекламодателя, так как рекламодатель запретил вам выполнять его задания!</span>';
+		include('footer.php');
+		exit();
+	}elseif($country_targ==2 && strtolower($my_country)!="ua") {
+		echo '<fieldset class="errorp">Ошибка!! По условиям Гео-Таргетинга задание не доступно для выполнения и оплаты!&nbsp;&nbsp;<a href="'.$_SERVER["PHP_SELF"].'?page='.limpiar($_GET["page"]).'">&lt;&lt; Вернуться назад</a></fieldset>';
+		include('footer.php');
+		exit();
+	}elseif($country_targ==1 && strtolower($my_country)!="ru") {
+		echo '<fieldset class="errorp">Ошибка!!! По условиям Гео-Таргетинга задание не доступно для выполнения и оплаты!&nbsp;&nbsp;<a href="'.$_SERVER["PHP_SELF"].'?page='.limpiar($_GET["page"]).'">&lt;&lt; Вернуться назад</a></fieldset>';
+		include('footer.php');
+		exit();
+	}else{ 
+	
+	$sql_uss = mysql_query("SELECT avatar,joindate2,username,reiting FROM `tb_users` WHERE `id`='".$row['user_id']."'");
+	$row_uss = mysql_fetch_array($sql_uss);
+	$time_reg=DATE("d.m.Yг. в H:i",$row_uss["joindate2"]);
+	$time_soz=DATE("d.m.Yг. в H:i",$row["date_add"]);
+	
+	$goog_us =mysql_num_rows(mysql_query("SELECT * FROM `tb_ads_task_pay` WHERE (`status`='good_auto' or `status`='good') && `rek_name`='".$row_uss['username']."'"));
+	$bad_us = mysql_num_rows(mysql_query("SELECT * FROM `tb_ads_task_pay` WHERE `status`='bad' && `rek_name`='".$row_uss['username']."'"));
+	$dorab_us=mysql_num_rows(mysql_query("SELECT * FROM `tb_ads_task_notif` WHERE `type`='dorab' && `rek_name`='".$row_uss['username']."'"));
+	
+	$goog_us_s =mysql_num_rows(mysql_query("SELECT * FROM `tb_ads_task_pay` WHERE (`status`='good_auto' or `status`='good') && `ident`='".$rid."'"));
+	$bad_us_s = mysql_num_rows(mysql_query("SELECT * FROM `tb_ads_task_pay` WHERE `status`='bad' && `ident`='".$rid."'"));
+	$dorab_us_s=mysql_num_rows(mysql_query("SELECT * FROM `tb_ads_task_notif` WHERE `type`='dorab' && `ident`='".$rid."'"));
+	
+	
+	if($row_uss['reiting']<0) $row_uss['reiting'] = '<span style="color:#FF0000; text-shadow: 1px 1px #000;">'.$row_uss['reiting'].'</span>';
+	$reitt=$row_uss['reiting'];
+	$sql_rang_s = mysql_query("SELECT * FROM `tb_config_rang` WHERE `r_ot`<='$reitt' AND `r_do`>='".floor($reitt)."'");
+	if(mysql_num_rows($sql_rang_s)>0) {
+		$row_rang_s = mysql_fetch_assoc($sql_rang_s);
+	}else{
+		$sql_rang_s = mysql_query("SELECT * FROM `tb_config_rang` ORDER BY `id` ASC LIMIT 1");
+		$row_rang_s = mysql_fetch_assoc($sql_rang_s);
+	}
+	$my_id_rang_s = $row_rang_s["id"];
+	$my_rang_s = $row_rang_s["rang"];
+	
+	$us_otz = mysql_num_rows(mysql_query("SELECT * FROM `tb_ads_task_pay` WHERE `coment`!='' && `ident`='".$rid."'"));
+	$sql_otc_wait = mysql_query("SELECT * FROM `tb_ads_task_pay` WHERE `user_name`='$username' && `status`='wait' && ident='$rid'");
+    $sql_otc_good = mysql_query("SELECT * FROM `tb_ads_task_pay` WHERE `user_name`='$username' && (`status`='good' or `status`='good_auto') && ident='$rid'");
+    $sql_otc_good_c = mysql_query("SELECT * FROM `tb_ads_task_pay` WHERE `user_name`='$username' && (`status`='wait' or`status`='good' or `status`='good_auto') && ident='$rid' ORDER BY `id` DESC LIMIT 1");
+	
+	$sql_otc_bad = mysql_query("SELECT * FROM `tb_ads_task_pay` WHERE `user_name`='$username' && `status`='bad' && ident='$rid'");
+	
+	$time_dist=time()-$row['distrib'];
+	$sql_distrib = mysql_query("SELECT * FROM `tb_ads_task_pay` WHERE `date_start`>'$time_dist' && ident='$rid'");
+	$sql_pss = mysql_num_rows(mysql_query("SELECT * FROM `tb_ads_task_pay` WHERE `user_name`='$username' AND `ident`='$rid' AND `type`='task' ORDER by `id` DESC LIMIT 1"));
+	
+	$sql_otc_dorab = mysql_query("SELECT * FROM `tb_ads_task_pay` WHERE `user_name`='$username' && `status`='dorab' && ident='$rid'");
+	$sql_otc_v = mysql_query("SELECT * FROM `tb_ads_task_pay` WHERE `user_name`='$username' && ident='$rid'");
+	$sql_otc_pro = mysql_query("SELECT * FROM `tb_ads_task_pay` WHERE `user_name`='$username' && `status`='' && ident='$rid'");
+	$sql_otc_pro_x = mysql_query("SELECT * FROM `tb_ads_task_pay` WHERE `user_name`='$username' && ident='$rid'");
+	$sql_otc_pro_vv = mysql_query("SELECT * FROM `tb_ads_task_pay` WHERE (`status`='' or `status`='dorab') && ident='$rid'");
+	$num_price=$row['totals']-mysql_num_rows($sql_otc_pro_vv);
+		require_once(ROOT_DIR."/bbcode/bbcode.lib.php");
+?>
+<div class="blok" align='center'>
+  <table class="tables"><thead><th align="center" colspan="2">Оплачиваемое задание № <?=$rid;?>  </th></thead></table>
+ <?
+  $s_task_st = mysql_fetch_array(mysql_query("SELECT * FROM `tb_ads_task` WHERE `username`='".$row_uss['username']."' && id='$rid'"));
+		  if($s_task_st['status']=='pause' or $s_task_st['status']=='wait'){
+		  echo '<span class="msg-warning">Это задание сейчас не активно.</span>';
+				if(mysql_num_rows($sql_otc_v)==0){
+					include('footer.php');
+					exit();
+				}
+		  }
+ ?>
+  <div style="padding: 3px;">           
+      <span style="font-size: 13px;" class="status">
+	  <?=str_replace("\r\n","<br>", $row["zdname"]);?>
+	  </span>
+      <span class="letter-subtitle">Информация об авторе<span style="float:right;">Регистрация на проекте: <?=$time_reg;?> </span></span>
+        
+      <table style="padding:0px;" border="0" cellpadding="0" cellspacing="0">
+        <tbody><tr>
+          <td width="12%" valign="top" align="center" rowspan="4">
+		    <a href="/wall?uid=<?=$row["user_id"];?>" title="Стена автора" target="_blank">
+		      <img class="avatar_wall" border="0" src="/avatar/<?=$row_uss['avatar'];?>" align="absmiddle" width="60" height="60">
+		    </a>
+	      </td>
+          <td style="padding:2px; border-bottom: 1px solid #E0E0E0" width="100%" align="left">
+		    Автор: 
+		    <span class="status">
+		      <font color="#114C73">
+		        <a style="border-bottom: 1px dotted;" href="/wall?uid=<?=$row["user_id"];?>" target="_blank" title="Стена"><?=$row["username"];?></a>
+		      </font>
+		    </span> 
+		    <span class="status"><b>[<?=$my_rang_s;?> - <?=$row_uss['reiting'];?>]</b></span> 
+		    		  </td>
+		  <td align="right" style="padding:0px; border-bottom: 1px solid #E0E0E0" width="30%">
+		    <a href="/view_task.php?page=task&op=&sort=1&sort_z=&type=&task_search=4&task_name=<?=$row["user_id"];?>&task_price=0.20&s=1" target="_blank"><img src="images/icons/task_author.png" style="cursor:pointer;padding-left:6px;" title=" Все задания автора "/></a>                  
+		  </td>
+<?
+                  $rek_id_z=$row["user_id"];
+				$sql_f = mysql_query("SELECT `id` FROM `tb_ads_task_fav` WHERE `type`='favorite' AND `user_id`='$partnerid' AND `rek_id`='$rid'");
+			if (mysql_num_rows($sql_f) > 0) {
+echo '<td>';
+				echo '<span class="scon-del"><span class="btn blue task-favorite-r" style="cursor: pointer;" onclick="js_post_task(this, \'../ajax/ajax_task.php\', \'func=del_izb_task&id='.$rid.'\');return false;"><img src="images/icons/task_unfav.png" style="cursor:pointer;padding-left:6px;" title=" Исключить из Избранного "/></span></span>';
+				echo '</td>';
+				
+				echo '<td>';
+				echo '<span class="scon-ok"  "><span class="btn green task-favorite-r" style="cursor: pointer;" onclick="js_post_task(this, \'../ajax/ajax_task.php\', \'func=add_izb_task&id='.$rid.'\');return false;"><img src="images/icons/task_fav.png" style="cursor:pointer;padding-left:6px;" title=" Добавить в избранное "/></span></span>';
+			echo '</td>';
+}else{
+echo '<td>';				
+				echo '<span class="scon-ok"><span class=" task-favorite-r"  style="cursor: pointer;" onclick="js_post_task(this, \'../ajax/ajax_task.php\', \'func=add_izb_task&id='.$rid.'\');return false;"><img src="images/icons/task_fav.png" style="cursor:pointer;padding-left:6px;" title=" Добавить в избранное "/></span></span>';
+				echo '</td>';
+echo '<td>';
+				echo '<span class="scon-del"><span class=" task-favorite-r" style="display: none; "><span style="cursor: pointer;" onclick="js_post_task(this, \'../ajax/ajax_task.php\', \'func=del_izb_task&id='.$rid.'\');return false;"><img src="images/icons/task_unfav.png" style="cursor:pointer;padding-left:6px;" title=" Исключить из Избранного "/></span></span>';
+				echo '</td>';
+
+			}
+ echo '<td>';
+		    echo '<img src="images/icons/task_abuse.png" id="claims'.$rid.'" onClick="ShowHideInfo(\'claims_'.$rid.'\');" style="cursor:pointer;padding-left:6px;"title="Пожаловаться на рекламу"/>';
+		  echo '</td>';
+			
+			
+			//echo'<span class="btn red task-favorite-r" style="cursor: pointer;">[<a href="javascript: void(0);" onclick="add_bl(\''.$rek_id_z.'\');" style="color:#fff;" title="поместить пользователя '.$row_uss['username'].' в черный список (Black List)">Отправить автора в BL</a>]</span>';
+                        echo'<td><a href="javascript: void(0);" onclick="add_bl(\''.$rek_id_z.'\');"><img src="images/icons/m_no.png" style="cursor:pointer;padding-left:6px;" title=" поместить пользователя '.$row_uss["username"].' в черный список (Black List) "/></a></td>';
+			
+?>
+
+        </tr>
+<tr>
+      <td class="taskmsg" style="display: none; ">
+	  </td>
+    </tr>  
+        <tr>
+          <td colspan="2" style="padding:0px; border-bottom: 1px solid #E0E0E0" width="85%" align="left">Статистика по всем заданиям автора за время работы на проекте</td>
+	    </tr>
+        <tr>
+          <td colspan="2" style="padding:0px; border-bottom: 1px solid #E0E0E0" width="85%" align="left">
+		    Одобрено <span class="status"><font color="green" title="За все время работы на проекте автор оплатил задания <?=$goog_us;?> исполнителям" style="cursor: help;"><?=$goog_us;?></font></span><font color="gray"> / </font>
+		    Доработка <span class="status"><font color="#999999" title="За все время работы на проекте автор отправил на доработку задания <?=$dorab_us;?> исполнителям" style="cursor: help;"><?=$dorab_us;?></font></span> /
+		    Отклонено <span class="status"><font color="#c80000" title="За все время работы на проекте автор отказал в оплате <?=$bad_us;?> исполнителям" style="cursor: help;"><?=$bad_us;?></font></span> /
+		  </td>
+        </tr>
+      </tbody></table> 
+        
+      <span class="letter-subtitle">Информация о задании № <?=$rid;?> <span style="float:right;">Создано: <?=$time_soz;?></span></span>
+      <table width="100%" border="0" cellpadding="0" cellspacing="0">
+        <tbody><tr> 
+          <td style="padding:0px; border-bottom: 1px solid #E0E0E0" width="75%" align="left"> 
+		    Одобрено <span class="status"><font color="green" title="Одобрено" style="cursor: help;"><?=$goog_us_s;?></font></span> /
+					      Доработка <span class="status"><font color="#999999" title="Отправлено на доработку" style="cursor: help;"><?=$dorab_us_s;?></font></span> /
+					    Отклонено <span class="status"><font color="#c80000" title="Отклонено" style="cursor: help;"><?=$bad_us_s;?></font></span>
+					  </td>
+          <td style="padding:0px;" width="25%" align="right" nowrap="nowrap">
+            <span class="status"><font color="green">Оплата: <font size="3"><?=$row["zdprice"];?></font> руб.</font></span>
+		  </td>
+        </tr>
+        <tr>
+          <td style="padding:2px; border-bottom: 1px solid #E0E0E0" width="100%" align="left">
+		    Категория:
+		    
+		    		      <font color="#D28000">
+						  <?
+		if($row['zdtype']=='1'){
+			echo 'Клики.';
+		}elseif($row['zdtype']=='2'){
+			echo 'Регистрация без активности.';
+		}elseif($row['zdtype']=='3'){
+			echo 'Регистрация с активностью.';
+		}elseif($row['zdtype']=='4'){
+			echo 'Постинг в форум.';
+		}elseif($row['zdtype']=='5'){
+			echo 'Постинг в блоги.';
+		}elseif($row['zdtype']=='6'){
+			echo 'Голосование.';
+		}elseif($row['zdtype']=='7'){
+			echo 'Загрузка файлов.';
+		}elseif($row['zdtype']=='8'){
+			echo 'Прочее.';
+		}elseif($row['zdtype']=='9'){
+			echo 'YouTube';
+		}elseif($row['zdtype']=='10'){
+			echo 'Социальные сети';
+		}elseif($row['zdtype']=='11'){
+			echo 'Написать статью';
+		}elseif($row['zdtype']=='12'){
+			echo 'Оставить отзыв';
+		}elseif($row['zdtype']=='13'){
+			echo 'Играть в игры';
+		}elseif($row['zdtype']=='14'){
+			echo 'Инвестировать';
+		}elseif($row['zdtype']=='15'){
+			echo 'Стать моим рефералом на my-melina.com';
+		}elseif($row['zdtype']=='16'){
+			echo 'Перевод кредитов';
+		}elseif($row['zdtype']=='18'){
+			echo 'Forex';
+		}elseif($row['zdtype']=='19'){
+			echo 'Мобильные устройства';
+		}elseif($row['zdtype']=='20'){
+			echo 'Работа с капчей';
+		}elseif($row['zdtype']=='21'){
+			echo 'Работа с криптовалютами';
+		}elseif($row['zdtype']=='22'){
+			echo 'Экономические Игры/Фермы';
+		}elseif($row['zdtype']=='23'){
+			echo 'Зарубежные сайты';
+		}
+			
+			
+			
+					?>	  
+						  </font>
+		    		    
+		  </td>
+          <td style="padding:2px;" width="25%" align="right">
+		  <?if($row['reiting']>='0' and $row['reiting']<'1'){?>
+            <span class="rating0" title=""></span>
+			<?}elseif($row['reiting']>='1' and $row['reiting']<'2'){?>
+            <span class="rating1" title=""></span>
+			<?}elseif($row['reiting']>='2' and $row['reiting']<'3'){?>
+            <span class="rating2" title=""></span>
+			<?}elseif($row['reiting']>='3' and $row['reiting']<'4'){?>
+            <span class="rating3" title=""></span>
+			<?}elseif($row['reiting']>='4' and $row['reiting']<'4,5'){?>
+            <span class="rating4" title=""></span>
+			<?}elseif($row['reiting']>='4,5' and $row['reiting']<='5'){?>
+            <span class="rating5" title=""></span>
+			<?}?>
+          </td>
+
+        </tr>
+		
+		<tr>
+		
+		<td style="padding:2px; border-bottom: 1px solid #E0E0E0" width="75%" align="left">
+		    Ограничение по рейтингу: <font color="#D28000"><?=$row['zdreit_us'];;?> баллов и выше</font>
+		  </td>
+		</tr>
+		<tr>
+		<td style="padding:2px; border-bottom: 1px solid #E0E0E0" width="75%" align="left">
+		Проверка:<font color="#D28000">
+		<?if($row["zdcheck"]=='1') {?>
+		в течении 5-ти дней
+		<?}else{?> автоматически<?}?>
+		</font>
+		  </td>
+		</tr>
+		
+	    <tr>
+
+          <td style="padding:2px; border-bottom: 1px solid #E0E0E0" width="75%" align="left">
+            Повторное выполнение: <font color="#D28000">
+			<?
+			if($row["zdre"]==3){
+			$zp=1;
+				echo 'Многократно - каждые 3 часа';
+			}elseif($row["zdre"]==6){
+			
+			$zp=1;
+				echo 'Многократно - каждые 6 часов';
+			}elseif($row["zdre"]==12){
+			$zp=1;
+				echo 'Многократно - каждые 12 часов';
+			}elseif($row["zdre"]==24){
+			$zp=1;
+				echo 'Многократно - каждые 24 часа (1 сутки)';
+			}elseif($row["zdre"]==48){
+			$zp=1;
+				echo 'Многократно - каждые 48 часов (2-е суток)';
+			}elseif($row["zdre"]==72){
+			$zp=1;
+				echo 'Многократно - каждые 72 часа (3-е суток)';
+			}else{
+			$zp=0;
+				echo 'Один пользователь — одно выполнение';
+			}
+			$sql_o=mysql_fetch_array($sql_otc_good_c);
+
+			$sg=($sql_o['date_end']+$row["zdre"]*60*60)-time(); 
+			?> 
+			</font>
+		  </td> 
+          		<td style="padding:2px;" width="25%" align="right">
+		    <?if($us_otz=='0'){?>
+		    		      <span class="textgray">Отзывов нет </span>
+						  <?}else{?>
+						  <a href="#" onclick="popup_w('Все отзывы к заданию №<?=$rid;?>', false, 600, 'func=all_com&id=<?=$rid;?>', '../ajax/ajax_task.php');return false;">Отзывы (<?=$us_otz;?>)</a>
+						  
+						  <?}?>
+		    		    
+		  </td>
+        </tr>
+		
+
+		        <tr>
+				 <?if($row_uss['username']!=$username){?>
+		  <td style="padding-top:5px;" colspan="2" align="center">
+            			
+				<?		
+			if(mysql_num_rows($sql_otc_good)>0 or mysql_num_rows($sql_otc_bad)>0){
+				
+				echo '<a class="btn blue" href="javascript: void(0);" onclick="add_coment(\''.$rid.'\');"><font color="#fff">Оставить отзыв</font></a>';
+				}		
+			
+				
+				/*$rek_id_z=$row["user_id"];
+				$sql_f = mysql_query("SELECT `id` FROM `tb_ads_task_fav` WHERE `type`='favorite' AND `user_id`='$partnerid' AND `rek_id`='$rek_id_z'");
+			if (mysql_num_rows($sql_f) > 0) {
+				echo '<span class="scon-del"><span class="btn blue task-favorite-r" style="cursor: pointer;" onclick="js_post_task(this, \'../ajax/ajax_task.php\', \'func=del_izb_task&id='.$rid.'\');return false;"><font color="#fff">Исключить из Избранного</font></span></span>';
+				
+				echo '<span class="scon-ok" style="display: none; "><span class="btn green task-favorite-r" style="cursor: pointer;" onclick="js_post_task(this, \'../ajax/ajax_task.php\', \'func=add_izb_task&id='.$rid.'\');return false;"><font color="#fff">Добавить в избранное</font></span></span>';
+			}else{				
+				echo '<span class="scon-ok"><span class="btn green task-favorite-r" style="cursor: pointer;" onclick="js_post_task(this, \'../ajax/ajax_task.php\', \'func=add_izb_task&id='.$rid.'\');return false;"><font color="#fff">Добавить в избранное</font></span></span>';
+				
+				echo '<span class="scon-del" style="display: none; "><span class="btn blue task-favorite-r" style="cursor: pointer;" onclick="js_post_task(this, \'../ajax/ajax_task.php\', \'func=del_izb_task&id='.$rid.'\');return false;"><font color="#fff">Исключить из Избранного</font></span></span>';
+				
+			}
+			
+			
+			echo'<span class="btn red task-favorite-r" style="cursor: pointer;">[<a href="javascript: void(0);" onclick="add_bl(\''.$rek_id_z.'\');" style="color:#fff;" title="поместить пользователя '.$row_uss['username'].' в черный список (Black List)">Отправить автора в BL</a>]</span>';
+			*/
+?>
+		    	
+			  		  </td>
+					  <?}?>
+		</tr>
+      			  <tr>
+      <td class="taskmsg" style="display: none; ">
+	  </td>
+    </tr>  
+<?
+echo '<tr id="claims_'.$rid.'"  colspan="3" style="display:none;">';
+		echo '<td colspan="3" align="center" class="td-serf" style="color: #FFFFFF; background-color: #FF9966; padding: 5px 0px; font: 12px Tahoma, Arial, sans-serif;">';
+			echo '<div id="info-claims-'.$rid.'" style="display:none;"></div>';
+			echo '<div id="formclaims'.$rid.'"><table style="width:100%; margin:0; padding:0;">';
+			echo '<tr>';
+				echo '<td align="center" width="100" style="color: #FFFFFF; background-color: #FF9966; border:none; padding:0; margin:0;">Текст жалобы:</td>';
+				echo '<td align="center" style="color: #FFFFFF; background-color: #FF9966; border:none; padding:0; margin:0;"><div id="newform"><input type="text" id="claimstext'.$rid.'" maxlength="100" value="" class="ok" style="margin:0; padding:1px 5px;" /></div></td>';
+				echo '<td align="center" width="120" style="color: #FFFFFF; background-color: #FF9966; border:none; padding:0; margin:0;"><span onClick="AddClaims(\''.$rid.'\', \'task\');" class="sub-red" style="float:none;">Отправить</span></td>';
+			echo '</tr>';
+			echo '</table></div>';
+		echo '</td>';
+	echo '</tr>';
+?>
+      </tbody></table>
+      
+      
+	  <span class="letter-subtitle">Описание задания:</span>
+
+	  <div class="maintask" style="text-align: left;">
+	  <? 
+	  function desc_bb($desc) {
+	$desc = new bbcode($desc);
+	$desc = $desc->get_html();
+	$desc = str_replace("&amp;", "&", $desc);
+	return $desc;
+}
+	  echo desc_bb(str_replace("<br>","\r\n", $row["zdtext"]));?>
+	  </div><br>
+      <span class="letter-subtitle">Что нужно указать для выполнения задания:</span>
+
+      <span class="yellowbk">
+	  <?if($row["zotch"]!=""){
+		    echo $row["zotch"];
+		    }else{
+			echo 'Контрольное слово';
+			}
+			?></span>
+           
+           <?
+		   
+		   if(mysql_num_rows($sql_otc_wait)>0){?>
+		    <div id='otc-<?=$rid;?>'>
+			<span class="letter-subtitle">Мой отчет</span>
+			<span class="yellowbk">
+        <span style="cursor: pointer; border-bottom: 1px dotted #9f6000;" onclick="popup_w('Отчет к заданию №<?=$rid;?>', false, 700, 'func=zero_otchet&amp;id=<?=$rid;?>', '/ajax/ajax_task.php');return false;">Посмотреть отчет</span>
+      </span>
+	  </div>
+	 <?}else{?>
+	 <div id='otc-<?=$rid;?>' style="display: none; ">
+			<span class="letter-subtitle">Мой отчет</span>
+			<span class="yellowbk">
+        <span style="cursor: pointer; border-bottom: 1px dotted #9f6000;" onclick="popup_w('Отчет к заданию №<?=$rid;?>', false, 700, 'func=zero_otchet&amp;id=<?=$rid;?>', '/ajax/ajax_task.php');return false;">Посмотреть отчет</span>
+      </span>
+	  </div>
+	 <?}?>
+	 
+	  <table id="ot_task-<?=$rid;?>">	  		  
+      <td class="taskmsg_zz" style="display: none; "></td>
+	  </table>
+      <span class="letter-subtitle">Внимание!</span>	    
+	      
+		  <?
+		  if($row["time"]==1)
+				$time_ad=1;
+			elseif($row["time"]==2)
+				$time_ad=3;
+			elseif($row["time"]==3)
+				$time_ad=12;
+			elseif($row["time"]==4)
+				$time_ad=24;
+			elseif($row["time"]==5)
+				$time_ad=72;
+			elseif($row["time"]==6)
+				$time_ad=168;
+			elseif($row["time"]==7)
+				$time_ad=336;
+			elseif($row["time"]==8)
+				$time_ad=720;
+			else{
+				$time_ad=1;
+			}
+		  
+		 
+			if($row_uss['username']==$username){
+		  echo '<span class="msg-warning">Вы не можете выполнять это задание, т.к. вы являетесь его автором.</span>';	
+			
+			}elseif($num_price<=0 and mysql_num_rows($sql_otc_pro_x)<=0){
+			
+			echo '<span class="msg-warning">Это задание уже выполняет нужное количество пользователей!</span>';
+			
+			}elseif($row['distrib']>0 && mysql_num_rows($sql_distrib)>0 && $sql_pss<=0){
+			
+			echo '<span class="msg-warning">Задание временно недоступно, установлен интервал выполнения!</span>';
+			
+			}elseif(mysql_num_rows($sql_otc_wait)>0 and $zp==0){
+			
+			?>
+			<div class="blockwaittask">Спасибо, ваш отчёт принят!<br><span class="text12">Подождите, пока его проверит рекламодатель.<br>Это займёт не более 5 дней</span></div>
+			
+			<?}elseif(mysql_num_rows($sql_otc_wait)>0 and $sg>0 and $zp==1){?>
+		  <div class="blockwaittask">Спасибо, ваш отчёт принят!<br><span class="text12">Подождите, пока его проверит рекламодатель.<br>Это займёт не более 5 дней</span></div>
+		  <?  
+		  
+		  				if($row["zdre"]>0) {   
+				
+						$ost = ($sql_o["date_end"] + ($row["zdre"] * 60 * 60) );  
+						$ost = ( $ost - time() );
+
+						if($ost > 0){
+						echo '<br>';
+							$d = floor($ost/86400);
+							$h = floor( ($ost - ($d * 86400)) / 3600);
+							$i = floor( ($ost - ($d * 86400) - ($h * 3600)) / 60 );
+							$s = floor($ost - ($d * 86400) - ($h * 3600) - ($i * 60));
+
+							if($d==0)
+								$dn="дней";
+							elseif($d==1)
+								$dn="день";
+							elseif($d==2) 
+								$dn="дня";
+							elseif($d==3)
+								$dn="дня";
+							else{ $dn=""; }
+
+							if($h>=0) {$hn="часов";}else{$hn="";}
+							if(($h>1 && $h<5) | $h>20) {$hn="часа";}
+							if($h==1 | $h==21) {$hn="час";}
+
+							if($i>0) {$mn="минуты";}else{$mn="";}
+							if($i==1 | $i==21 | $i==31 | $i==41 | $i==51) {$mn="минуту";}
+							if( ($i<21 && $i>4) | $i==0 | $i===20 | $i==30 | $i==40 | $i==50 | ($i>24 && $i<30) | ($i>34 && $i<40) | ($i>44 && $i<50) | ($i>54 && $i<60)) {$mn="минут";}
+
+							if($s>0) {$sn="секунды";}else{$sn="";}
+							if($s==1 | $s==21 | $s==31 | $s==41 | $s==51) {$sn="секунду";}
+							if( ($s<21 && $s>4) | $s==0 | $s===20 | $s==30 | $s==40 | $s==50 | ($s>24 && $s<30) | ($s>34 && $s<40) | ($s>44 && $s<50) | ($s>54 && $s<60)) {$sn="секунд";}
+
+							if($s>0) {$date_next = "<b>$s</b> $sn";}
+							if($i>0) {$date_next = "<b>$i</b> $mn <b>$s</b> $sn";}
+							if($h>0) {$date_next = "<b>$h</b> $hn <b>$i</b> $mn <b>$s</b> $sn";}
+							if($d>0) {$date_next = "<b>$d</b> $dn <b>$h</b> $hn <b>$i</b> $mn <b>$s</b> $sn";}
+							if($h==0 && $i==0 && $s==0) {$date_next = "<b>$d</b> $dn";}
+
+							echo '<td colspan="2" height="40px">Повторное выполнение этого задания будет возможно через '.$date_next.'</td>';
+				
+				}
+				}    
+		  
+		    echo '<div id=\'ok_otch\' style="display: none;">';
+		  echo '<div class="blockwaittask">Спасибо, ваш отчёт принят!<br><span class="text12">Подождите, пока его проверит рекламодатель.<br>Это займёт не более 5 дней</span></div>';
+		  echo '</div>';
+		  
+		   $z_otc_pro=mysql_fetch_array($sql_otc_pro);
+		   $time_zz=time();
+			
+		  ?>
+		   <div id='new_otch' style="display: none;">
+            <div style="text-align: left;">
+              <b>На выполнение этого задания выделяется не более <font color="#C80000">
+			  <?
+			  if($row["time"]==1)
+				echo '1 часa';
+			elseif($row["time"]==2)
+				echo '3 часов';
+			elseif($row["time"]==3)
+				echo '12 часов';
+			elseif($row["time"]==4)
+				echo '24 часов';
+			elseif($row["time"]==5)
+				echo '3 дней';
+			elseif($row["time"]==6)
+				echo '7 дней';
+			elseif($row["time"]==7)
+				echo '14 дней';
+			elseif($row["time"]==8)
+				echo '30 дней';
+			else{
+				echo '';
+			}
+			  ?>
+			  </font></b>
+              <br>Чтобы выполнить задание, нажмите на кнопку «Начать выполнение». Необходимую подтверждающую информацию о выполнении задания нужно будет ввести здесь же.
+			      </div>
+			      
+			      			
+			<table width="100%" border="0" cellpadding="0" cellspacing="0">
+			  <tbody><tr>				
+				<td class="gosite">
+			      <form name="goform" method="post" action="/view_task.php?rid=<?=$rid;?>&op=gotask" target="_blank">
+			        <input name="id" value="<?=$rid;?>" type="hidden">
+			        <input class="btn_big_blue" style="margin-top:15px;" title="Приступить к выполнению задания" onclick="funcjs['task-start'](<?=$rid;?>);" value="Начать выполнение!" type="button">
+		          </form>
+			      <center><span class="desctext">Будет произведён переход на сайт<br><?=$row["zdurl"];?></span></center>
+			    </td>
+				
+		
+			  </tr>
+		  
+            </tbody></table>
+			</div>
+			
+			<div id='otch_r' style="display: none;">
+		  <div style="text-align: left;">
+	        		      <font color="green">• Вы начали выполнять это задание <b><? echo date("Y-m-d в H:i:s" , $time_zz);?></b></font>
+			<?
+			$time_endd=time()+($time_ad*60*60);
+			?>
+		    <br><font color="green">• Отчёт о выполнении необходимо подать не позднее <b><? echo date("Y-m-d в H:i:s" , $time_endd);?></b></font><br><br>
+		    Заполните внизу отчёт о выполнении задания. Если отчёт не будет подан, по прошествии указанного срока, заявка на выполнение будет аннулирована. Если вы полностью выполнили задание, напишите
+		    в форме ниже то, что необходимо указать для подтверждения и нажмите кнопку «Отправить отчёт». Если вы не собираетесь выполнять задание, нажмите кнопку «Отказаться от выполнения».
+		    <br><br>		    
+		    		      <span class="msg-warning">Предупреждение для любителей халявы.<br>За просьбы оплатить задание в обмен на хороший отзыв - БАН аккаунта.</span>
+					    <center>
+		      <span class="desctext">
+		        		        <font color="green">Ваш IP адрес: <?=$ip;?></font> (будет отправлен рекламодателю автоматически)
+		      </span>
+		    </center>
+		          
+		    <form method="post" action="../ajax/ajax_task.php" class="aj-form_u" data-infa="true,<?=$rid;?>,">
+		      <input name="func" type="hidden" value="done_otch">
+              <input name="id" type="hidden" value="<?=$rid;?>">
+		          		      		        
+		        <div style="position: relative;padding-top:20px;">
+		          <span class="len-otch">Осталось <span id="num-len">3000</span> символов</span>
+		          <textarea rows="5" name="ask_reply" id="coment" style="width: 98%; height: 150px; margin-top: 5px; border: 3px solid #B1C3CA;" onkeyup="desk_limit('#coment', 3000, '#num-len')"></textarea>
+		        </div>
+		          		      		          
+		      <input name="submit" class="btn_big_green" style="margin-top:10px;width: 715px;" title="Отправить отчёт о выполнении" value="Отправить отчёт о выполнении" type="submit">
+		      
+		    </form>
+
+		    <br><center><span class="desctext">Чтобы выполнить задание, вы переходили по <a href="<?=$row["zdurl"];?>" target="_blank">этой ссылке</a>.</span></center>
+
+		    <span class="btn_big_red" style="margin-top:10px;width: 695px;text-align: center;" title="Отказаться от выполнения" onclick="popup_w('Подтверждение!!', false, 450, 'func=otc_z&l=/ajax/ajax_task.php&id=<?=$rid;?>', '/ajax/ajax_task.php');return false;">Отказаться от выполнения</span>
+		    
+		  </div>
+		  </div>
+			
+			
+		  <?
+		  
+			}elseif(mysql_num_rows($sql_otc_good)>0 and $sg>0 and $zp==1){  
+				echo '<div class="blockoktask"><b>Отличная работа!</b><br><span class="text12"><b>Рекламодатель одобрил и оплатил ваш труд!</b></span></div>';
+				
+				if($row["zdre"]>0) { 
+				
+						$ost = ($sql_o["date_end"] + ($row["zdre"] * 60 * 60) );
+						$ost = ( $ost - time() );
+
+						if($ost > 0){
+							$d = floor($ost/86400);
+							$h = floor( ($ost - ($d * 86400)) / 3600);
+							$i = floor( ($ost - ($d * 86400) - ($h * 3600)) / 60 );
+							$s = floor($ost - ($d * 86400) - ($h * 3600) - ($i * 60));
+
+							if($d==0)
+								$dn="дней";
+							elseif($d==1)
+								$dn="день";
+							elseif($d==2) 
+								$dn="дня";
+							elseif($d==3)
+								$dn="дня";
+							else{ $dn=""; }
+
+							if($h>=0) {$hn="часов";}else{$hn="";}
+							if(($h>1 && $h<5) | $h>20) {$hn="часа";}
+							if($h==1 | $h==21) {$hn="час";}
+
+							if($i>0) {$mn="минуты";}else{$mn="";}
+							if($i==1 | $i==21 | $i==31 | $i==41 | $i==51) {$mn="минуту";}
+							if( ($i<21 && $i>4) | $i==0 | $i===20 | $i==30 | $i==40 | $i==50 | ($i>24 && $i<30) | ($i>34 && $i<40) | ($i>44 && $i<50) | ($i>54 && $i<60)) {$mn="минут";}
+
+							if($s>0) {$sn="секунды";}else{$sn="";}
+							if($s==1 | $s==21 | $s==31 | $s==41 | $s==51) {$sn="секунду";}
+							if( ($s<21 && $s>4) | $s==0 | $s===20 | $s==30 | $s==40 | $s==50 | ($s>24 && $s<30) | ($s>34 && $s<40) | ($s>44 && $s<50) | ($s>54 && $s<60)) {$sn="секунд";}
+
+							if($s>0) {$date_next = "<b>$s</b> $sn";}
+							if($i>0) {$date_next = "<b>$i</b> $mn <b>$s</b> $sn";}
+							if($h>0) {$date_next = "<b>$h</b> $hn <b>$i</b> $mn <b>$s</b> $sn";}
+							if($d>0) {$date_next = "<b>$d</b> $dn <b>$h</b> $hn <b>$i</b> $mn <b>$s</b> $sn";}
+							if($h==0 && $i==0 && $s==0) {$date_next = "<b>$d</b> $dn";}
+
+							echo '<td colspan="2" height="40px">Повторное выполнение этого задания будет возможно через '.$date_next.'</td>';
+				
+				}
+				}    
+			}elseif(mysql_num_rows($sql_otc_good)>0 and $zp==0){
+			
+				echo '<div class="blockoktask"><b>Отличная работа!</b><br><span class="text12"><b>Рекламодатель одобрил и оплатил ваш труд!</b></span></div>';	
+			
+			}elseif(mysql_num_rows($sql_otc_bad)>0){
+		  echo '<div class="blocknotask">Данное задание отклонено рекламодателем!</div>';
+			}elseif(mysql_num_rows($sql_otc_pro)>0){
+		  $z_otc_pro=mysql_fetch_array($sql_otc_pro);
+		  
+		  
+		  echo '<div id=\'ok_otch\' style="display: none;">';
+		  echo '<div class="blockwaittask">Спасибо, ваш отчёт принят!<br><span class="text12">Подождите, пока его проверит рекламодатель.<br>Это займёт не более 5 дней</span></div>';
+		  echo '</div>';
+		  
+		  
+		  ?>
+		  <div id='otch_r'>
+		  <div style="text-align: left;"> 
+	        
+	        		      <font color="green">• Вы начали выполнять это задание <b><? echo date("Y-m-d в H:i:s" ,$z_otc_pro['date_start']);?></b></font>
+		    		    
+	
+			<?
+			$time_endd=$z_otc_pro['date_start']+($time_ad*60*60);
+			?>
+		    <br><font color="green">• Отчёт о выполнении необходимо подать не позднее <b><? echo date("Y-m-d в H:i:s" , $time_endd);?></b></font>
+		    <br><br>
+		    Заполните внизу отчёт о выполнении задания. Если отчёт не будет подан, по прошествии указанного срока, заявка на выполнение будет аннулирована. Если вы полностью выполнили задание, напишите
+		    в форме ниже то, что необходимо указать для подтверждения и нажмите кнопку «Отправить отчёт». Если вы не собираетесь выполнять задание, нажмите кнопку «Отказаться от выполнения».
+		    <br><br>
+		    
+		    		      <span class="msg-warning">Предупреждение для любителей халявы.<br>За просьбы оплатить задание в обмен на хороший отзыв - БАН аккаунта.</span>
+					    <center>
+		      <span class="desctext">
+		        		        <font color="green">Ваш IP адрес: <?=$ip;?></font> (будет отправлен рекламодателю автоматически)
+		      </span>
+		    </center>
+		          
+		    <form method="post" action="../ajax/ajax_task.php" class="aj-form_u" data-infa="true,<?=$rid;?>,">
+		      <input name="func" type="hidden" value="done_otch">
+              <input name="id" type="hidden" value="<?=$rid;?>">
+		          		      		        
+		        <div style="position: relative;padding-top:20px;">
+		          <span class="len-otch">Осталось <span id="num-len">3000</span> символов</span>
+		          <textarea rows="5" name="ask_reply" id="coment" style="width: 98%; height: 150px; margin-top: 5px; border: 3px solid #B1C3CA;" onkeyup="desk_limit('#coment', 3000, '#num-len')"></textarea>
+		        </div>
+		          		      		          
+		      <input name="submit" class="btn_big_green" style="margin-top:10px;width: 715px;" title="Отправить отчёт о выполнении" value="Отправить отчёт о выполнении" type="submit">
+		      
+		    </form>
+
+		    <br><center><span class="desctext">Чтобы выполнить задание, вы переходили по <a href="<?=$row["zdurl"];?>" target="_blank">этой ссылке</a>.</span></center>
+
+		    <span class="btn_big_red" style="margin-top:10px;width: 695px;text-align: center;" title="Отказаться от выполнения" onclick="popup_w('Подтверждение!!', false, 450, 'func=otc_z&l=/ajax/ajax_task.php&id=<?=$rid;?>', '/ajax/ajax_task.php');return false;">Отказаться от выполнения</span>
+		    
+		  </div>
+		  </div>
+		  
+		  
+		  <div id='new_otch' style="display: none;">
+            <div style="text-align: left;">
+              <b>На выполнение этого задания выделяется не более <font color="#C80000">
+			  <?
+			  if($row["time"]==1)
+				echo '1 часa';
+			elseif($row["time"]==2)
+				echo '3 часов';
+			elseif($row["time"]==3)
+				echo '12 часов';
+			elseif($row["time"]==4)
+				echo '24 часов';
+			elseif($row["time"]==5)
+				echo '3 дней';
+			elseif($row["time"]==6)
+				echo '7 дней';
+			elseif($row["time"]==7)
+				echo '14 дней';
+			elseif($row["time"]==8)
+				echo '30 дней';
+			else{
+				echo '';
+			}
+			  ?>
+			  </font></b>
+              <br>Чтобы выполнить задание, нажмите на кнопку «Начать выполнение». Необходимую подтверждающую информацию о выполнении задания нужно будет ввести здесь же.
+			      </div>
+			      
+			      			
+			<table width="100%" border="0" cellpadding="0" cellspacing="0">
+			  <tbody><tr>				
+				<td class="gosite">
+			      <form name="goform" method="post" action="/view_task.php?rid=<?=$rid;?>&op=gotask" target="_blank">
+			        <input name="id" value="<?=$rid;?>" type="hidden">
+			        <input class="btn_big_blue" style="margin-top:15px;" title="Приступить к выполнению задания" onclick="funcjs['task-start'](<?=$rid;?>);" value="Начать выполнение!" type="button">
+		          </form>
+			      <center><span class="desctext">Будет произведён переход на сайт<br><?=$row["zdurl"];?></span></center>
+			    </td>
+				
+		
+			  </tr>
+		  
+            </tbody></table>
+			</div>
+		  
+  
+
+		  
+		  <?
+		  
+			}elseif(mysql_num_rows($sql_otc_dorab)>0){
+			$z_otc_pro=mysql_fetch_array($sql_otc_dorab);
+		echo '<div id=\'ok_otch\' style="display: none;">';
+		  echo '<div class="blockwaittask">Спасибо, ваш отчёт принят!<br><span class="text12">Подождите, пока его проверит рекламодатель.<br>Это займёт не более 5 дней</span></div>';
+		  echo '</div>';
+		  ?>
+
+		  <div id='otch_r'>
+		  <div style="text-align: left;">
+	        
+	        <font color="green">• Вы начали выполнять это задание <b><? echo date("Y-m-d в H:i:s" ,$z_otc_pro['date_start']);?></b></font>
+
+			<?
+				$time_endd=$z_otc_pro['date_start']+24*60*60;
+			?>
+		    <br><font color="green">• Отчёт о выполнении необходимо подать не позднее <b><? echo date("Y-m-d в H:i:s" , $time_endd);?></b></font>
+		    <br>
+			<br><font color="red"><b>Доработать: <?=$z_otc_pro['why'];?></b></font>
+		    <br>
+			<br><font color="red"><b>Это задание было отправлено Вам на доработку!</b></font>
+		    <br><br>
+		    Заполните внизу отчёт о выполнении задания. Если отчёт не будет подан, по прошествии указанного срока, заявка на выполнение будет аннулирована. Если вы полностью выполнили задание, напишите
+		    в форме ниже то, что необходимо указать для подтверждения и нажмите кнопку «Отправить отчёт». Если вы не собираетесь выполнять задание, нажмите кнопку «Отказаться от выполнения».
+		    <br><br>
+		    
+		    		      <span class="msg-warning">Предупреждение для любителей халявы.<br>За просьбы оплатить задание в обмен на хороший отзыв - БАН аккаунта.</span>
+					    <center>
+		      <span class="desctext">
+		        		        <font color="green">Ваш IP адрес: <?=$ip;?></font> (будет отправлен рекламодателю автоматически)
+		      </span>
+		    </center>
+		          
+		    <form method="post" action="../ajax/ajax_task.php" class="aj-form_u" data-infa="true,<?=$rid;?>,">
+		      <input name="func" type="hidden" value="done_otch">
+              <input name="id" type="hidden" value="<?=$rid;?>">
+		          		      		        
+		        <div style="position: relative;padding-top:20px;">
+		          <span class="len-otch">Осталось <span id="num-len">3000</span> символов</span>
+		          <textarea rows="5" name="ask_reply" id="coment" style="width: 98%; height: 150px; margin-top: 5px; border: 3px solid #B1C3CA;" onkeyup="desk_limit('#coment', 3000, '#num-len')"></textarea>
+		        </div>
+		          		      		          
+		      <input name="submit" class="btn_big_green" style="margin-top:10px;width: 715px;" title="Отправить отчёт о выполнении" value="Отправить отчёт о выполнении" type="submit">
+		      
+		    </form>
+
+		    <br><center><span class="desctext">Чтобы выполнить задание, вы переходили по <a href="<?=$row["zdurl"];?>" target="_blank">этой ссылке</a>.</span></center>
+
+		    <span class="btn_big_red" style="margin-top:10px;width: 695px;text-align: center;" title="Отказаться от выполнения" onclick="popup_w('Подтверждение!!', false, 450, 'func=otc_z&l=/ajax/ajax_task.php&id=<?=$rid;?>', '/ajax/ajax_task.php');return false;">Отказаться от выполнения</span>
+		    
+		  </div>
+		  </div>
+		  
+		  
+		  
+		  <div id='new_otch' style="display: none;">
+            <div style="text-align: left;">
+              <b>На выполнение этого задания выделяется не более <font color="#C80000">
+			  <?
+			  if($row["time"]==1)
+				echo '1 часa';
+			elseif($row["time"]==2)
+				echo '3 часов';
+			elseif($row["time"]==3)
+				echo '12 часов';
+			elseif($row["time"]==4)
+				echo '24 часов';
+			elseif($row["time"]==5)
+				echo '3 дней';
+			elseif($row["time"]==6)
+				echo '7 дней';
+			elseif($row["time"]==7)
+				echo '14 дней';
+			elseif($row["time"]==8)
+				echo '30 дней';
+			else{
+				echo '';
+			}
+			  ?>
+			  </font></b>
+              <br>Чтобы выполнить задание, нажмите на кнопку «Начать выполнение». Необходимую подтверждающую информацию о выполнении задания нужно будет ввести здесь же.
+			      </div>
+			      
+			      			
+			<table width="100%" border="0" cellpadding="0" cellspacing="0">
+			  <tbody><tr>				
+				<td class="gosite">
+			      <form name="goform" method="post" action="/view_task.php?rid=<?=$rid;?>&op=gotask" target="_blank">
+			        <input name="id" value="<?=$rid;?>" type="hidden">
+			        <input class="btn_big_blue" style="margin-top:15px;" title="Приступить к выполнению задания" onclick="funcjs['task-start'](<?=$rid;?>);" value="Начать выполнение!" type="button">
+		          </form>
+			      <center><span class="desctext">Будет произведён переход на сайт<br><?=$row["zdurl"];?></span></center>
+			    </td>
+				
+		
+			  </tr>
+		  
+            </tbody></table>
+			</div>
+		  
+		  <?
+		  }else{
+			?>
+
+			<div id='new_otch'>
+            <div style="text-align: left;">
+              <b>На выполнение этого задания выделяется не более <font color="#C80000">
+			  <?
+			  if($row["time"]==1)
+				echo '1 часa';
+			elseif($row["time"]==2)
+				echo '3 часов';
+			elseif($row["time"]==3)
+				echo '12 часов';
+			elseif($row["time"]==4)
+				echo '24 часов';
+			elseif($row["time"]==5)
+				echo '3 дней';
+			elseif($row["time"]==6)
+				echo '7 дней';
+			elseif($row["time"]==7)
+				echo '14 дней';
+			elseif($row["time"]==8)
+				echo '30 дней';
+			else{
+				echo '';
+			}
+			  ?>
+			  </font></b>
+              <br>Чтобы выполнить задание, нажмите на кнопку «Начать выполнение». Необходимую подтверждающую информацию о выполнении задания нужно будет ввести здесь же.
+			      </div>
+			      
+			      			
+			<table width="100%" border="0" cellpadding="0" cellspacing="0">
+			  <tbody><tr>				
+				<td class="gosite">
+			      <form name="goform" method="post" action="/view_task.php?rid=<?=$rid;?>&op=gotask" target="_blank">
+			        <input name="id" value="<?=$rid;?>" type="hidden">
+			        <input class="btn_big_blue" style="margin-top:15px;" title="Приступить к выполнению задания" onclick="funcjs['task-start'](<?=$rid;?>);" value="Начать выполнение!" type="button">
+		          </form>
+			      <center><span class="desctext">Будет произведён переход на сайт<br><?=$row["zdurl"];?></span></center>
+			    </td>
+				
+		
+			  </tr>
+		  
+            </tbody></table>
+			</div>
+			
+			
+			<?
+			 $z_otc_pro=mysql_fetch_array($sql_otc_pro);
+		  
+		   if($row["time"]==1)
+				$time_ad=1;
+			elseif($row["time"]==2)
+				$time_ad=3;
+			elseif($row["time"]==3)
+				$time_ad=12;
+			elseif($row["time"]==4)
+				$time_ad=24;
+			elseif($row["time"]==5)
+				$time_ad=72;
+			elseif($row["time"]==6)
+				$time_ad=168;
+			elseif($row["time"]==7)
+				$time_ad=336;
+			elseif($row["time"]==8)
+				$time_ad=720;
+			else{
+				$time_ad=1;
+			}
+			$time_zz=time();
+			
+			
+			echo '<div id=\'ok_otch\' style="display: none;">';
+		  echo '<div class="blockwaittask">Спасибо, ваш отчёт принят!<br><span class="text12">Подождите, пока его проверит рекламодатель.<br>Это займёт не более 5 дней</span></div>';
+		  echo '</div>';
+		  ?>
+		  
+		  
+		  
+		  <div id='otch_r' style="display: none;">
+		  <div style="text-align: left;">
+	        		      <font color="green">• Вы начали выполнять это задание <b><? echo date("Y-m-d в H:i:s" , $time_zz);?></b></font>
+			<?
+			$time_endd=time()+($time_ad*60*60);
+			?>
+		    <br><font color="green">• Отчёт о выполнении необходимо подать не позднее <b><? echo date("Y-m-d в H:i:s" , $time_endd);?></b></font><br><br>
+		    Заполните внизу отчёт о выполнении задания. Если отчёт не будет подан, по прошествии указанного срока, заявка на выполнение будет аннулирована. Если вы полностью выполнили задание, напишите
+		    в форме ниже то, что необходимо указать для подтверждения и нажмите кнопку «Отправить отчёт». Если вы не собираетесь выполнять задание, нажмите кнопку «Отказаться от выполнения».
+		    <br><br>		    
+		    		      <span class="msg-warning">Предупреждение для любителей халявы.<br>За просьбы оплатить задание в обмен на хороший отзыв - БАН аккаунта.</span>
+					    <center>
+		      <span class="desctext">
+		        		        <font color="green">Ваш IP адрес: <?=$ip;?></font> (будет отправлен рекламодателю автоматически)
+		      </span>
+		    </center>
+		          
+		    <form method="post" action="../ajax/ajax_task.php" class="aj-form_u" data-infa="true,<?=$rid;?>,">
+		      <input name="func" type="hidden" value="done_otch">
+              <input name="id" type="hidden" value="<?=$rid;?>">
+		          		      		        
+		        <div style="position: relative;padding-top:20px;">
+		          <span class="len-otch">Осталось <span id="num-len">3000</span> символов</span>
+		          <textarea rows="5" name="ask_reply" id="coment" style="width: 98%; height: 150px; margin-top: 5px; border: 3px solid #B1C3CA;" onkeyup="desk_limit('#coment', 3000, '#num-len')"></textarea>
+		        </div>
+		          		      		          
+		      <input name="submit" class="btn_big_green" style="margin-top:10px;width: 715px;" title="Отправить отчёт о выполнении" value="Отправить отчёт о выполнении" type="submit">
+		      
+		    </form>
+
+		    <br><center><span class="desctext">Чтобы выполнить задание, вы переходили по <a href="<?=$row["zdurl"];?>" target="_blank">этой ссылке</a>.</span></center>
+
+		    <span class="btn_big_red" style="margin-top:10px;width: 695px;text-align: center;" title="Отказаться от выполнения" onclick="popup_w('Подтверждение!!', false, 450, 'func=otc_z&l=/ajax/ajax_task.php&id=<?=$rid;?>', '/ajax/ajax_task.php');return false;">Отказаться от выполнения</span>
+		    
+		  </div>
+		  </div>
+			
+			
+              <?
+			  }
+			  ?>
+
+  
+  </div>
+         
+</div>
+<br>
+<br>
+
+<?
+}
+}else{
+	echo '<fieldset class="errorp">Ошибка! Такого задания уже нету!&nbsp;&nbsp;&nbsp;<a href="'.$_SERVER["PHP_SELF"].'?page='.limpiar($_GET["page"]).'">&lt;&lt; Вернуться назад</a></fieldset>';
+	include('footer.php');
+	exit();
+}
+
+include('footer.php');
+exit();
+}
+
+if(isset($_SESSION["userLog"]) && isset($_SESSION["userPas"])) {
+	$sql_b = mysql_query("SELECT * FROM `tb_ban_users` WHERE `name`='$username' ORDER BY `id` DESC");
+	if(mysql_num_rows($sql_b)>0) {
+		$row_b = mysql_fetch_array($sql_b);
+		$prichina = $row_b["why"];
+		$kogda = $row_b["date"];
+		echo '<span class="msg-error">Ваш аккаунт заблокирован! Вы не можете просматривать рекламу!<br><u>Дата блокировки</u>: '.$row_b["date"].'</span>';
+		include('footer.php');
+		exit();
+	}
+}
+
+
+if($my_rep_task <= -10) {
+	echo '<span class="msg-error">Вы не можете выполнять задания! Ваша репутация исполнителя&nbsp;&nbsp;'.$my_rep_task.'</span>';
+	include('footer.php');
+	exit();
+}
+
+if(isset($_GET["op"]) && isset($_GET["rid"]) && limpiar($_GET["op"])=="dell") {
+	$sql_dell = mysql_query("SELECT `id` FROM `tb_ads_task_pay` WHERE `user_name`='$username' AND `ident`='$rid' AND `type`='task' AND (`status`='' OR `status`='dorab') ORDER BY `id` DESC LIMIT 1");
+	if(mysql_num_rows($sql_dell)>0) {
+		$row_dell = mysql_fetch_row($sql_dell);
+		mysql_query("DELETE FROM `tb_ads_task_pay`  WHERE `id`='".$row_dell["0"]."' LIMIT 1") or die(mysql_error());
+		echo '<script type="text/javascript">location.replace("'.$_SERVER["PHP_SELF"].'?page='.limpiarez($_GET["page"]).'&rid='.$rid.'");</script>';
+	}
+}
+
+$sql = mysql_query("SELECT * FROM `tb_ads_task` WHERE `id`='$rid' AND `status`='pay' AND `totals`>'0'");
+if(mysql_num_rows($sql)>0) {
+	$row = mysql_fetch_array($sql);
+	$rek_name = $row["username"];
+	$country_targ = $row["country_targ"];
+
+	$check_user = mysql_query("SELECT `id` FROM `tb_ads_task_bl` WHERE `rek_name`='$rek_name' AND `user_name`='$username'");
+	if(mysql_num_rows($check_user)) {
+		echo '<span class="msg-error">Вы не можете выполнять задания этого рекламодателя, так как рекламодатель запретил вам выполнять его задания!</span>';
+		include('footer.php');
+		exit();
+	
+		include('footer.php');
+		exit();
+	}elseif($country_targ==2 && strtolower($my_country)!="ua") {
+		echo '<fieldset class="errorp">Ошибка! По условиям Гео-Таргетинга задание не доступно для выполнения и оплаты!&nbsp;&nbsp;<a href="'.$_SERVER["PHP_SELF"].'?page='.limpiar($_GET["page"]).'">&lt;&lt; Вернуться назад</a></fieldset>';
+		include('footer.php');
+		exit();
+	}elseif($country_targ==1 && strtolower($my_country)!="ru") {
+		echo '<fieldset class="errorp">Ошибка! По условиям Гео-Таргетинга задание не доступно для выполнения и оплаты!&nbsp;&nbsp;<a href="'.$_SERVER["PHP_SELF"].'?page='.limpiar($_GET["page"]).'">&lt;&lt; Вернуться назад</a></fieldset>';
+		include('footer.php');
+		exit();
+	}else
+
+
+	echo '<table class="tables">';
+		echo '<thead><tr align="center" height="30px"><th align="center" colspan="2">Оплачиваемое задание</th></tr></thead>';
+		echo '<tr>';
+			echo '<td width="140" align="right" height="30px"><b>Название:</b></td>';
+			echo '<td>&nbsp;'.str_replace("\r\n","<br>", $row["zdname"]).'</td>';
+		echo '</tr>';
+		echo '<tr>';
+			echo '<td width="140" align="right" height="30px"><b>Тип задания:</b></td>';
+			if($row["zdtype"]==1)
+				echo '<td>&nbsp;Клики</td>';
+			elseif($row["zdtype"]==2)
+				echo '<td>&nbsp;Регистрация без активности</td>';
+			elseif($row["zdtype"]==3)
+				echo '<td>&nbsp;Регистрация с активностью</td>';
+			elseif($row["zdtype"]==4)
+				echo '<td>&nbsp;Постинг в форум</td>';
+			elseif($row["zdtype"]==5)
+				echo '<td>&nbsp;Постинг в блоги</td>';
+			elseif($row["zdtype"]==6)
+				echo '<td>&nbsp;Голосование</td>';
+			elseif($row["zdtype"]==7)
+				echo '<td>&nbsp;Загрузка файлов</td>';
+			elseif($row["zdtype"]==8)
+				echo '<td>&nbsp;Прочее</td>';
+			else{
+				echo '<td></td>';
+			}
+		echo '</tr>';
+
+		$sql_u = mysql_query("SELECT `id`,`username`,`reiting`,`wall_com_p`,`wall_com_o` FROM `tb_users` WHERE `username`='".$row["username"]."'");
+		if(mysql_num_rows($sql_u)>0) {
+			$row_u = mysql_fetch_array($sql_u);
+
+			$wall_com = $row_u["wall_com_p"] - $row_u["wall_com_o"];
+
+			$info_user = ''.$row_u["username"].' <img src="img/reiting.png" border="0" alt="" align="middle" title="Рейтинг" style="margin:0; padding:0;" /> <span style="color:blue;">'.round($row_u["reiting"], 2).'</span> ';
+			$info_user.= '<a href="'.$_SERVER["PHP_SELF"].'?page='.limpiar($_GET["page"]).'&task_search=4&task_name='.$row_u["id"].'"><img src="img/view.png" border="0" alt="Посмотреть все задания этого рекламодателя" align="middle" title="Посмотреть все задания этого рекламодателя" alt="Посмотреть все задания этого рекламодателя" style="margin:0; padding:0;" /></a>&nbsp;&nbsp;';
+
+			$wall_com = $row_u["wall_com_p"] - $row_u["wall_com_o"];
+			$info_user.= '<a href="/wall?uid='.$row_u["id"].'" target="_blank"><img src="img/wall20.png" title="Стена пользователя '.$row_u["username"].'" width="20" border="0" align="absmiddle" />';
+
+				if($wall_com>0) {
+					$info_user.= '<b style="color:#008000;">+'.$wall_com.'</b></a>';
+				}elseif($wall_com<0) {
+					$info_user.= '<b style="color:#FF0000;">'.$wall_com.'</b></a>';
+				}else{
+					$info_user.= '<b style="color:#000000;">0</b></a>';
+				}
+
+			$info_user.= '&nbsp;&nbsp;&nbsp;[<a href="javascript: void(0);" onclick="add_bl(\''.$row_u["id"].'\');" style="color:#000; font-weight: bold;" title="поместить пользователя '.$row_u["username"].' в черный список (Black List)">BL</a>]';
+
+		}else{
+			$info_user = ''.$row["user_name"].' <span style="color:#FF0000;">Рекламодатель удален</span>';
+		}
+
+		echo '<tr>';
+			echo '<td width="140" align="right" height="30px"><b>Рекламодатель:</b></td>';
+			echo '<td><table width="100%"><tr><td width="250">'.$info_user.'</td>';
+
+			$sql_f = mysql_query("SELECT `id` FROM `tb_ads_task_fav` WHERE `type`='favorite' AND `user_id`='$partnerid' AND `rek_id`='".$row["id"]."'");
+			if (mysql_num_rows($sql_f) > 0) {
+				echo '<td style="border-left: 1px solid #cccccc; padding-left:20px;">[<a href="'.$_SERVER["PHP_SELF"].'?page='.limpiar($_GET["page"]).'&amp;favorite=del&amp;rid='.$row["id"].'">удалить из избранного</a>]</td></tr>';
+			}else{
+				echo '<td style="border-left: 1px solid #cccccc; padding-left:20px;">[<a href="'.$_SERVER["PHP_SELF"].'?page='.limpiar($_GET["page"]).'&amp;favorite=add&amp;rid='.$row["id"].'">добавить в избранное</a>]</td></tr>';
+			}
+			echo '</table></td>';
+
+		echo '</tr>';
+		echo '<tr>';
+			echo '<td width="140" align="right" height="30px"><b>Рейтинг:</b></td>';
+			echo '<td><table width="100%"><tr><td width="250">&nbsp;'.round($row["reiting"], 2).' (проголосовало '.$row["all_coments"].')&nbsp;&nbsp;[<a href="javascript: void(0);" onclick="add_coment(\''.$rid.'\');">проголосовать</a>]</td><td style="border-left: 1px solid #cccccc; padding-left:20px;"><span style="color:green;">'.$row["goods"].'</span> - <span style="color:red;">'.$row["bads"].'</span> - <span style="color:black;">'.$row["wait"].'</span></td></tr></table></td>';
+		echo '</tr>';
+		echo '<tr>';
+			echo '<td width="140" align="right" height="30px"><b>Повтор задания:</b></td>';
+			if($row["zdre"]==3)
+				echo '<td>&nbsp;Задание можно выполнять каждые 3 часа</td>';
+			elseif($row["zdre"]==6)
+				echo '<td>&nbsp;Задание можно выполнять каждые 6 часов</td>';
+			elseif($row["zdre"]==12)
+				echo '<td>&nbsp;Задание можно выполнять каждые 12 часов</td>';
+			elseif($row["zdre"]==24)
+				echo '<td>&nbsp;Задание можно выполнять каждые 24 часа (1 сутки)</td>';
+			elseif($row["zdre"]==48)
+				echo '<td>&nbsp;Задание можно выполнять каждые 48 часов (2-е суток)</td>';
+			elseif($row["zdre"]==72)
+				echo '<td>&nbsp;Задание можно выполнять каждые 72 часа (3-е суток)</td>';
+			else{
+				echo '<td>&nbsp;НЕТ</td>';
+			}
+		echo '</tr>';
+			if($row["zotch"]!=""){
+			echo '<tr>';
+			echo '<td width="140" align="right" height="30px"><b>Что нужно подать в отчете:</b></td>';
+		    echo '<td>&nbsp;'.$row["zotch"].'</td>';
+		    }
+			
+		echo '<tr>';
+			echo '<td width="140" align="right" height="30px"><b>Время на выполнение задания:</b></td>';
+			if($row["time"]==1)
+				echo '<td>&nbsp;1 час</td>';
+			elseif($row["time"]==2)
+				echo '<td>&nbsp;3 часа</td>';
+			elseif($row["time"]==3)
+				echo '<td>&nbsp;12 часов</td>';
+			elseif($row["time"]==4)
+				echo '<td>&nbsp;24 часа</td>';
+			elseif($row["time"]==5)
+				echo '<td>&nbsp;3 дня</td>';
+			elseif($row["time"]==6)
+				echo '<td>&nbsp;7 дней</td>';
+			elseif($row["time"]==7)
+				echo '<td>&nbsp;14 дней</td>';
+			elseif($row["time"]==8)
+				echo '<td>&nbsp;30 дней</td>';
+			else{
+				echo '<td></td>';
+			}
+		echo '</tr>';		
+			
+		echo '<tr>';	
+			echo '<td width="140" align="right" height="30px"><b>Проверка задания:</b></td>';
+			if($row["zdcheck"]==1) {echo '<td>&nbsp;Проверка в ручном режиме рекламодателем в течение 5 дней</td>';}else{echo '<td>&nbsp;Указание контрольного слова</td>';}
+		echo '</tr>';
+		echo '<thead><tr align="center" height="30px"><th align="center" colspan="2">Описание задания</th></tr></thead>';
+		echo '<tr>';
+			echo '<td colspan="2">'.$row["zdtext"].'</td>';
+		echo '</tr>';
+		echo '<tr>';
+			echo '<td colspan="2"><br>За выполнение этого задания Вы получите: <b>'.$row["zdprice"].' руб.</b></td>';
+		echo '</tr>';
+		echo '<thead><tr align="center" height="30px"><th align="center" colspan="2">Выполнение задания</th></tr></thead>';
+		echo '<tr>';
+
+			$sql_p = mysql_query("SELECT * FROM `tb_ads_task_pay` WHERE `user_name`='$username' AND `ident`='$rid' AND `type`='task' ORDER by `id` DESC LIMIT 1");
+			if(mysql_num_rows($sql_p)>0) {
+				$row_p = mysql_fetch_array($sql_p);
+				if($row_p["status"]=="") {
+					echo '<td colspan="2" height="50px">Вы уже начали выполнять это задание. Если по каким-то причинам Вы закрыли окно браузера, то начните выполнять задание еще раз, перейдя по ссылке:<br><a href="'.$row["zdurl"].'" target="_blank">'.$row["zdurl"].'</td>';
+				}elseif($row_p["status"]=="dorab") {
+					echo '<td colspan="2" height="50px"><span class="msg-error" style="margin:0px;">Задание было отправлено на доработку и Вы уже начали выполнять это задание.<br>Коментарий рекламодателя: '.$row_p["why"].'<br>Если по каким-то причинам Вы закрыли окно браузера, то начните выполнять задание еще раз.<br><a href="'.$row["zdurl"].'" target="_blank"><input type="submit" class="submit" value="Начать"></span></td>';
+				}else{
+					if($row["zdre"]>0) {
+						$ost = ($row_p["date_end"] + ($row["zdre"] * 60 * 60) );
+						$ost = ( $ost - time() );
+
+						if($ost > 0){
+							$d = floor($ost/86400);
+							$h = floor( ($ost - ($d * 86400)) / 3600);
+							$i = floor( ($ost - ($d * 86400) - ($h * 3600)) / 60 );
+							$s = floor($ost - ($d * 86400) - ($h * 3600) - ($i * 60));
+
+							if($d==0)
+								$dn="дней";
+							elseif($d==1)
+								$dn="день";
+							elseif($d==2)
+								$dn="дня";
+							elseif($d==3)
+								$dn="дня";
+							else{ $dn=""; }
+
+							if($h>=0) {$hn="часов";}else{$hn="";}
+							if(($h>1 && $h<5) | $h>20) {$hn="часа";}
+							if($h==1 | $h==21) {$hn="час";}
+
+							if($i>0) {$mn="минуты";}else{$mn="";}
+							if($i==1 | $i==21 | $i==31 | $i==41 | $i==51) {$mn="минуту";}
+							if( ($i<21 && $i>4) | $i==0 | $i===20 | $i==30 | $i==40 | $i==50 | ($i>24 && $i<30) | ($i>34 && $i<40) | ($i>44 && $i<50) | ($i>54 && $i<60)) {$mn="минут";}
+
+							if($s>0) {$sn="секунды";}else{$sn="";}
+							if($s==1 | $s==21 | $s==31 | $s==41 | $s==51) {$sn="секунду";}
+							if( ($s<21 && $s>4) | $s==0 | $s===20 | $s==30 | $s==40 | $s==50 | ($s>24 && $s<30) | ($s>34 && $s<40) | ($s>44 && $s<50) | ($s>54 && $s<60)) {$sn="секунд";}
+
+							if($s>0) {$date_next = "<b>$s</b> $sn";}
+							if($i>0) {$date_next = "<b>$i</b> $mn <b>$s</b> $sn";}
+							if($h>0) {$date_next = "<b>$h</b> $hn <b>$i</b> $mn <b>$s</b> $sn";}
+							if($d>0) {$date_next = "<b>$d</b> $dn <b>$h</b> $hn <b>$i</b> $mn <b>$s</b> $sn";}
+							if($h==0 && $i==0 && $s==0) {$date_next = "<b>$d</b> $dn";}
+
+							echo '<td colspan="2" height="40px">Вы уже выполнили это задание. Повторное выполнение этого задания будет возможно через '.$date_next.'</td>';
+						}else{
+							echo '<td align="center" colspan="2"><form action="'.$_SERVER["PHP_SELF"].'" method="GET" target="_blank"><input type="hidden" name="page" value="'.limpiar($_GET["page"]).'"><input type="hidden" name="op" value="gotask"><input type="hidden" name="rid" value="'.$rid.'"><input type="submit" class="submit" value="Начать выполнение"></form></td>';
+						}
+					}else{
+						echo '<td colspan="2" height="40px">Вы уже выполнили это задание.'; if($row_p["status"]=="wait") { echo 'Задание ожидает проверку рекламодателем, в течение 5 дней.';} echo '</td>';
+					}
+				}
+			}else{
+				echo '<td align="center" colspan="2"><form action="'.$_SERVER["PHP_SELF"].'" method="GET" target="_blank"><input type="hidden" name="page" value="'.limpiar($_GET["page"]).'"><input type="hidden" name="op" value="gotask"><input type="hidden" name="rid" value="'.$rid.'"><input type="submit" class="submit" value="Начать выполнение"></form></td>';
+			}
+
+		echo '</tr>';
+		echo '<thead><tr align="center" height="30px"><th align="center" colspan="2">Проверка задания</th></tr></thead>';
+		echo '<tr align="center">';
+			echo '<td colspan="2" align="center">';
+				if( isset($row_p["status"]) && isset($row_p["status"]) && ($row_p["status"]=="dorab" | $row_p["status"]=="") ) {echo '<div align="center" style="text-align:center; width:480px; margin:0 auto;">';}else{echo '<div align="center" style="text-align:center; width:320px; margin:0 auto;">';}
+					echo '<form action="'.$_SERVER["PHP_SELF"].'" method="GET"><input type="hidden" name="page" value="'.limpiar($_GET["page"]).'"><input type="hidden" name="op" value="ctask"><input type="hidden" name="rid" value="'.$rid.'"><input type="submit" class="submit" style="float: left;" value="Подать отчет"></form>';
+					if( isset($row_p["status"]) && isset($row_p["status"]) && ($row_p["status"]=="dorab" | $row_p["status"]=="") ) echo '<form action="'.$_SERVER["PHP_SELF"].'" method="GET"><input type="hidden" name="page" value="'.limpiar($_GET["page"]).'"><input type="hidden" name="op" value="dell"><input type="hidden" name="rid" value="'.$rid.'"><input type="submit" class="submit" style="float: left;" value="Отказаться от выполнения"></form>';
+					echo '<form action="'.$_SERVER["PHP_SELF"].'" method="GET"><input type="hidden" name="page" value="'.limpiar($_GET["page"]).'"><input type="submit" class="submit" style="float: left;" value="Перейти к списку заданий"></form>';
+				echo '</div>';
+			echo '</td>';
+		echo '</tr>';
+		echo '<thead><tr align="center" height="30px"><th align="center" colspan="2">Комментарии других пользователей</th></tr></thead>';
+		echo '<tr><td colspan="2">Комментариев всего: <b>'.$row["all_coments"].'</b>'; if($row["all_coments"]>20) echo ', показаны последние 20'; echo '</td></tr>';
+		echo '</table>';
+
+		$sql_p = mysql_query("SELECT * FROM `tb_ads_task_pay` WHERE `ident`='$rid' AND `type`='task' AND (`coment`!='' OR `ocenka`>0) ORDER by `id` DESC LIMIT 20");
+		if(mysql_num_rows($sql_p)>0) {
+
+			function smile($mes) {
+				for($i=0; $i<=37; $i++) {
+					$mes = str_ireplace("<br><br>", "<br>", $mes);
+					$mes = str_ireplace(":smile-".$i.":", "<img src=\"smiles/smile-".$i.".gif\" alt=\"\" align=\"middle\" border=\"0\" style=\"padding:0; margin:0;\">", $mes);
+				}
+				return $mes;
+			}
+
+			echo '<table width="100%" border="0" style="border-collapse: collapse; border: 1px solid #1E90FF;">';
+			while($row_p = mysql_fetch_assoc($sql_p)) {
+				$sql_u = mysql_query("SELECT `id`,`username`,`reiting`,`avatar`,`wall_com_p`,`wall_com_o` FROM `tb_users` WHERE `username`='".$row_p["user_name"]."'");
+				if(mysql_num_rows($sql_u)>0) {
+					$row_u = mysql_fetch_array($sql_u);
+
+					$wall_com = $row_u["wall_com_p"] - $row_u["wall_com_o"];
+					$info_wall = '<a href="/wall?uid='.$row_u["id"].'" target="_blank"><img src="img/wall20.png" title="Стена пользователя '.$row_u["username"].'" width="20" border="0" align="absmiddle" />';
+					if($wall_com>0) {
+						$info_wall.= '<b style="color:#008000;">+'.$wall_com.'</b></a>';
+					}elseif($wall_com<0) {
+						$info_wall.= '<b style="color:#FF0000;">'.$wall_com.'</b></a>';
+					}else{
+						$info_wall.= '<b style="color:#000000;">0</b></a>';
+					}
+
+
+					$info_user = '['.DATE("d.m.Yг. H:i", $row_p["date_com"]).'] <b>'.$row_u["username"].'</b> <img src="img/reiting.png" border="0" alt="" align="middle" title="Рейтинг" style="margin:0; padding:0;" /> <span style="color:blue;">'.round($row_u["reiting"], 2).'</span> '.$info_wall.', оценка <b>'.$row_p["ocenka"].'</b>';
+					$avatar_t = '<img src="../avatar/'.$row_u["avatar"].'" border="0" alt="" align="middle" />';
+				}else{
+					$info_user = '['.DATE("d.m.Yг. H:i", $row_p["date_com"]).'] <b>'.$row["user_name"].'</b> <span style="color:#FF0000;">Пользователь удален</span>, оценка <b>'.$row_p["ocenka"].'</b>';
+					$avatar_t = '<img src="/avatar/no.png" border="0" alt="" align="middle" />';
+				}
+
+				echo '<tr><td align="center" width="85" style="border: 1px solid #1E90FF;">'.$avatar_t.'</td><td valign="top" style="border: 1px solid #1E90FF; padding-left:10px;">'.$info_user.'<br><br>'.smile($row_p["coment"]).'</td></tr>';
+
+			}
+			echo '</table>';
+		}
+
+	mysql_query("UPDATE `tb_ads_task` SET `date_act`='".time()."' WHERE `id`='$rid' AND `status`='pay' AND `totals`>'0'") or die(mysql_error());
+
+	$sql_stat = mysql_query("SELECT `id` FROM `tb_ads_task_stat` WHERE `type`='view' AND `user_name`='$username' AND `ident`='$rid' AND `date`='".DATE("d.m.Y")."'");
+	if(mysql_num_rows($sql_stat)<1) {
+		mysql_query("INSERT INTO `tb_ads_task_stat` (`type`,`rek_name`,`user_name`,`ident`,`date`) VALUES('view','$rek_name','$username','$rid','".DATE("d.m.Y")."')") or die(mysql_error());
+		mysql_query("UPDATE `tb_ads_task` SET `views`=`views`+'1', `date_act`='".time()."' WHERE `id`='$rid' AND `status`='pay' AND `totals`>'0'") or die(mysql_error());
+	}
+
+	include('footer.php');
+	exit();
+}else{
+	echo '<fieldset class="errorp">Ошибка! Такого задания нет, либо оно не активно!&nbsp;&nbsp;&nbsp;<a href="'.$_SERVER["PHP_SELF"].'?page='.limpiar($_GET["page"]).'">&lt;&lt; Вернуться назад</a></fieldset>';
+	include('footer.php');
+	exit();
+}
+
+?>
